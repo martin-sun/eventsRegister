@@ -1,1 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+SC:wght@300;400;500;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
+
+@theme {
+	/* Badminton Championship Color Palette */
+	--color-primary: #059669;
+	--color-primary-light: #10b981;
+	--color-primary-dark: #047857;
+	--color-primary-darker: #064e3b;
+
+	--color-cta: #f59e0b;
+	--color-cta-hover: #d97706;
+
+	--color-surface: #f0fdf4;
+	--color-surface-warm: #fefce8;
+
+	--color-danger: #dc2626;
+
+	/* Typography */
+	--font-heading: 'Bebas Neue', 'Noto Sans SC', sans-serif;
+	--font-body: 'Source Sans 3', 'Noto Sans SC', sans-serif;
+	--font-chinese: 'Noto Sans SC', sans-serif;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	font-family: var(--font-body);
+	color: #0f172a;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
