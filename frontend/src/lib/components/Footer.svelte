@@ -58,7 +58,7 @@
 						>立即报名</a
 					>
 					<a
-						href="/rules"
+						href="/#rules"
 						class="block cursor-pointer font-chinese text-sm text-white/70 transition-colors duration-200 hover:text-cta"
 						>赛制规则</a
 					>
@@ -68,7 +68,7 @@
 						>参赛队伍</a
 					>
 					<a
-						href="/sponsors"
+						href="/#sponsors"
 						class="block cursor-pointer font-chinese text-sm text-white/70 transition-colors duration-200 hover:text-cta"
 						>赞助商</a
 					>

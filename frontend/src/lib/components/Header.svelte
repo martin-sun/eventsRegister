@@ -7,8 +7,8 @@
 		{ label: '首页', href: '/' },
 		{ label: '报名', href: '/register' },
 		{ label: '队伍', href: '/teams' },
-		{ label: '规则', href: '/rules' },
-		{ label: '赞助', href: '/sponsors' }
+		{ label: '规则', href: '/#rules' },
+		{ label: '赞助', href: '/#sponsors' }
 	];
 
 	function toggleMobileMenu() {

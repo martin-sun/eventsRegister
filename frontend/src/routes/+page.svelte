@@ -7,7 +7,10 @@
 		Target,
 		Award,
 		ChevronRight,
-		Clock
+		Clock,
+		Swords,
+		Scale,
+		Medal
 	} from 'lucide-svelte';
 
 	// --- Countdown Timer ---
@@ -61,6 +64,20 @@
 		{ icon: Award, title: '公平让分', desc: '男双/混双/女双让分机制' },
 		{ icon: Trophy, title: '丰厚奖金', desc: '冠亚季军均有奖励' },
 		{ icon: Users, title: '社区交流', desc: '结识更多球友' }
+	];
+
+	const handicapRules = [
+		{ match: '男双 vs 混双', points: '6分', startScore: '混双 6 : 0 男双', serve: '混双先发' },
+		{ match: '混双 vs 女双', points: '6分', startScore: '女双 6 : 0 混双', serve: '女双先发' },
+		{ match: '男双 vs 女双', points: '11分', startScore: '女双 11 : 0 男双', serve: '女双先发' },
+		{ match: '同性别对阵', points: '0分', startScore: '0 : 0', serve: '抽签决定' }
+	];
+
+	const prizes = [
+		{ rank: '🥇 冠军', main: '$400', consolation: '$100' },
+		{ rank: '🥈 亚军', main: '$300', consolation: '$80' },
+		{ rank: '🥉 季军', main: '$200', consolation: '$60' },
+		{ rank: '第4名', main: '$100', consolation: '$40' }
 	];
 
 	const sponsors = {
@@ -144,7 +161,7 @@
 					<ChevronRight class="h-5 w-5" />
 				</a>
 				<a
-					href="/rules"
+					href="#rules"
 					class="inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-white/30 bg-black/20 px-10 py-5 font-chinese text-lg font-medium text-white backdrop-blur-sm transition-all duration-300 hover:border-white hover:bg-white/10"
 				>
 					了解赛制
@@ -313,9 +330,132 @@
 </section>
 
 <!-- ============================================ -->
+<!-- RULES SECTION                                -->
+<!-- ============================================ -->
+<section id="rules" class="scroll-mt-20 bg-white py-16 sm:py-20">
+	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+		<div class="mb-10 text-center">
+			<h2 class="mb-2 font-heading text-3xl tracking-wide text-primary-darker sm:text-4xl">
+				赛制规则
+			</h2>
+			<p class="font-chinese text-slate-500">公平竞技，让每一场比赛都精彩</p>
+		</div>
+
+		<!-- Format + Handicap + Prizes - 3 column grid -->
+		<div class="grid gap-8 lg:grid-cols-3">
+
+			<!-- Format Card -->
+			<div class="rounded-2xl border border-slate-100 bg-surface p-6 shadow-sm">
+				<div class="mb-4 flex items-center gap-3">
+					<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+						<Swords class="h-5 w-5" />
+					</div>
+					<h3 class="font-chinese text-lg font-bold text-slate-900">比赛形式</h3>
+				</div>
+				<ul class="space-y-3 font-chinese text-sm text-slate-600">
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+						<span><strong class="text-slate-800">3局2胜制</strong>，每局21分</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+						<span>每球得分制（Rally Point）</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+						<span><strong class="text-slate-800">正赛：</strong>单败淘汰 + 三四名决赛</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+						<span><strong class="text-slate-800">安慰赛：</strong>首轮负者进入，同为单败淘汰</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
+						<span>每位选手最少两场比赛</span>
+					</li>
+				</ul>
+			</div>
+
+			<!-- Handicap Card -->
+			<div class="rounded-2xl border border-slate-100 bg-surface p-6 shadow-sm">
+				<div class="mb-4 flex items-center gap-3">
+					<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-cta/10 text-cta">
+						<Scale class="h-5 w-5" />
+					</div>
+					<h3 class="font-chinese text-lg font-bold text-slate-900">让分规则</h3>
+				</div>
+				<p class="mb-4 font-chinese text-xs text-slate-500">
+					性别优势方让分：男双 &gt; 混双 &gt; 女双
+				</p>
+				<div class="space-y-2">
+					{#each handicapRules as rule}
+						<div class="rounded-lg bg-white p-3 border border-slate-100">
+							<div class="flex items-center justify-between">
+								<span class="font-chinese text-sm font-semibold text-slate-800">{rule.match}</span>
+								<span class="rounded-full bg-primary/10 px-2 py-0.5 font-chinese text-xs font-bold text-primary">
+									让{rule.points}
+								</span>
+							</div>
+							<div class="mt-1 flex items-center justify-between font-chinese text-xs text-slate-500">
+								<span>{rule.startScore}</span>
+								<span>{rule.serve}</span>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Prizes Card -->
+			<div class="rounded-2xl border border-slate-100 bg-surface p-6 shadow-sm">
+				<div class="mb-4 flex items-center gap-3">
+					<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+						<Medal class="h-5 w-5" />
+					</div>
+					<h3 class="font-chinese text-lg font-bold text-slate-900">奖金设置</h3>
+				</div>
+				<p class="mb-4 font-chinese text-xs text-slate-500">每组均设正赛与安慰赛奖金</p>
+
+				<!-- Prize table -->
+				<div class="overflow-hidden rounded-lg border border-slate-100 bg-white">
+					<table class="w-full text-left font-chinese text-sm">
+						<thead>
+							<tr class="border-b border-slate-100 bg-slate-50">
+								<th class="px-3 py-2 text-xs font-semibold text-slate-500">名次</th>
+								<th class="px-3 py-2 text-xs font-semibold text-slate-500">正赛</th>
+								<th class="px-3 py-2 text-xs font-semibold text-slate-500">安慰赛</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each prizes as prize}
+								<tr class="border-b border-slate-50 last:border-0">
+									<td class="px-3 py-2 font-medium text-slate-800">{prize.rank}</td>
+									<td class="px-3 py-2 font-bold text-primary">{prize.main}</td>
+									<td class="px-3 py-2 text-slate-600">{prize.consolation}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+
+				<!-- Special prizes -->
+				<div class="mt-4 rounded-lg bg-amber-50 p-3 border border-amber-100">
+					<p class="font-chinese text-xs font-semibold text-amber-700 mb-1">特别奖项</p>
+					<ul class="space-y-1 font-chinese text-xs text-amber-600">
+						<li>• 最大年龄奖 $100</li>
+						<li>• 最优混双奖 $100</li>
+						<li>• 最优女双奖 $100</li>
+					</ul>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</section>
+
+<!-- ============================================ -->
 <!-- SPONSORS SECTION                             -->
 <!-- ============================================ -->
-<section class="bg-white py-16 sm:py-20">
+<section id="sponsors" class="scroll-mt-20 bg-surface py-16 sm:py-20">
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		<div class="mb-10 text-center">
 			<h2 class="mb-2 font-heading text-3xl tracking-wide text-primary-darker sm:text-4xl">
@@ -327,15 +467,14 @@
 		<!-- Title Sponsor -->
 		<div class="mb-10 text-center">
 			<p class="mb-4 font-chinese text-xs tracking-wider text-slate-400 uppercase">冠名赞助 / Title Sponsor</p>
-			<a
-				href="/sponsors"
-				class="group inline-block cursor-pointer rounded-2xl border-2 border-cta/20 bg-surface-warm px-12 py-8 transition-all duration-200 hover:border-cta/40 hover:shadow-md"
+			<div
+				class="group inline-block rounded-2xl border-2 border-cta/20 bg-surface-warm px-12 py-8 transition-all duration-200 hover:border-cta/40 hover:shadow-md"
 			>
 				<div class="font-heading text-4xl tracking-wide text-primary-darker sm:text-5xl">
 					{sponsors.title.name}
 				</div>
 				<div class="mt-1 font-body text-sm text-slate-400">{sponsors.title.nameEn}</div>
-			</a>
+			</div>
 		</div>
 
 		<!-- Diamond Sponsors -->
@@ -366,16 +505,6 @@
 			</div>
 		</div>
 
-		<!-- View all -->
-		<div class="mt-8 text-center">
-			<a
-				href="/sponsors"
-				class="inline-flex cursor-pointer items-center gap-1 font-chinese text-sm font-medium text-primary transition-colors duration-200 hover:text-primary-dark hover:underline"
-			>
-				查看所有赞助商
-				<ChevronRight class="h-4 w-4" />
-			</a>
-		</div>
 	</div>
 </section>
 
