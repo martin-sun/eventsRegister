@@ -19,6 +19,7 @@
 		DollarSign,
 		Heart
 	} from 'lucide-svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	// --- Constants ---
 	const TOURNAMENT_DATE = new Date('2026-05-24');
@@ -89,15 +90,15 @@
 	});
 
 	let categoryName = $derived.by(() => {
-		if (autoCategory === 'over100') return '双打100岁组';
-		if (autoCategory === 'over80') return '双打80岁组';
-		if (autoCategory === 'ineligible') return '不符合参赛条件';
+		if (autoCategory === 'over100') return m.category_100();
+		if (autoCategory === 'over80') return m.category_80();
+		if (autoCategory === 'ineligible') return m.reg_ineligible();
 		return '';
 	});
 
 	let categoryNameEn = $derived.by(() => {
-		if (autoCategory === 'over100') return 'Doubles 100+ Group';
-		if (autoCategory === 'over80') return 'Doubles 80+ Group';
+		if (autoCategory === 'over100') return m.category_100_en();
+		if (autoCategory === 'over80') return m.category_80_en();
 		if (autoCategory === 'ineligible') return 'Ineligible';
 		return '';
 	});
@@ -110,9 +111,9 @@
 	});
 
 	let genderTypeLabel = $derived.by(() => {
-		if (genderType === 'mens') return '男双';
-		if (genderType === 'womens') return '女双';
-		if (genderType === 'mixed') return '混双';
+		if (genderType === 'mens') return m.reg_mens();
+		if (genderType === 'womens') return m.reg_womens();
+		if (genderType === 'mixed') return m.reg_mixed();
 		return '';
 	});
 
@@ -123,21 +124,21 @@
 
 	let p1Errors = $derived.by(() => {
 		const errors: Record<string, string> = {};
-		if (touched1.firstName && !player1.firstName.trim()) errors.firstName = '请填写名字';
-		if (touched1.lastName && !player1.lastName.trim()) errors.lastName = '请填写姓氏';
-		if (touched1.gender && !player1.gender) errors.gender = '请选择性别';
+		if (touched1.firstName && !player1.firstName.trim()) errors.firstName = m.reg_err_first_name();
+		if (touched1.lastName && !player1.lastName.trim()) errors.lastName = m.reg_err_last_name();
+		if (touched1.gender && !player1.gender) errors.gender = m.reg_err_gender();
 		if (touched1.dob) {
 			if (!player1.dob) {
-				errors.dob = '请填写出生日期';
+				errors.dob = m.reg_err_dob();
 			} else if (p1Age !== null && p1Age < MIN_INDIVIDUAL_AGE) {
-				errors.dob = `参赛者须年满${MIN_INDIVIDUAL_AGE}岁（当前${p1Age}岁）`;
+				errors.dob = m.reg_err_age({ min: MIN_INDIVIDUAL_AGE, age: p1Age });
 			}
 		}
 		if (touched1.email) {
 			if (!player1.email.trim()) {
-				errors.email = '请填写电子邮箱';
+				errors.email = m.reg_err_email_required();
 			} else if (!isValidEmail(player1.email)) {
-				errors.email = '邮箱格式不正确';
+				errors.email = m.reg_err_email_invalid();
 			}
 		}
 		return errors;
@@ -145,21 +146,21 @@
 
 	let p2Errors = $derived.by(() => {
 		const errors: Record<string, string> = {};
-		if (touched2.firstName && !player2.firstName.trim()) errors.firstName = '请填写名字';
-		if (touched2.lastName && !player2.lastName.trim()) errors.lastName = '请填写姓氏';
-		if (touched2.gender && !player2.gender) errors.gender = '请选择性别';
+		if (touched2.firstName && !player2.firstName.trim()) errors.firstName = m.reg_err_first_name();
+		if (touched2.lastName && !player2.lastName.trim()) errors.lastName = m.reg_err_last_name();
+		if (touched2.gender && !player2.gender) errors.gender = m.reg_err_gender();
 		if (touched2.dob) {
 			if (!player2.dob) {
-				errors.dob = '请填写出生日期';
+				errors.dob = m.reg_err_dob();
 			} else if (p2Age !== null && p2Age < MIN_INDIVIDUAL_AGE) {
-				errors.dob = `参赛者须年满${MIN_INDIVIDUAL_AGE}岁（当前${p2Age}岁）`;
+				errors.dob = m.reg_err_age({ min: MIN_INDIVIDUAL_AGE, age: p2Age });
 			}
 		}
 		if (touched2.email) {
 			if (!player2.email.trim()) {
-				errors.email = '请填写电子邮箱';
+				errors.email = m.reg_err_email_required();
 			} else if (!isValidEmail(player2.email)) {
-				errors.email = '邮箱格式不正确';
+				errors.email = m.reg_err_email_invalid();
 			}
 		}
 		return errors;
@@ -190,19 +191,19 @@
 
 	let validationChecks = $derived.by(() => [
 		{
-			label: '两位选手均年满35岁',
+			label: m.reg_check_age(),
 			passed: p1Age !== null && p1Age >= 35 && p2Age !== null && p2Age >= 35
 		},
 		{
-			label: '组合年龄符合参赛要求',
+			label: m.reg_check_combined(),
 			passed: autoCategory !== null && autoCategory !== 'ineligible'
 		},
 		{
-			label: '必填信息已完整',
+			label: m.reg_check_info(),
 			passed: isPlayerValid(player1, p1Age) && isPlayerValid(player2, p2Age)
 		},
 		{
-			label: '比赛类型已确认',
+			label: m.reg_check_type(),
 			passed: genderType !== null
 		}
 	]);
@@ -232,15 +233,15 @@
 	}
 
 	// --- Step labels ---
-	const steps = [
-		{ num: 1, label: '填写信息' },
-		{ num: 2, label: '确认' },
-		{ num: 3, label: '完成' }
-	];
+	let steps = $derived([
+		{ num: 1, label: m.reg_step_info() },
+		{ num: 2, label: m.reg_step_confirm() },
+		{ num: 3, label: m.reg_step_done() }
+	]);
 </script>
 
 <svelte:head>
-	<title>报名参赛 - 萨斯卡通羽毛球双打锦标赛 2026</title>
+	<title>{m.reg_page_title()}</title>
 </svelte:head>
 
 <!-- ============================================ -->
@@ -251,9 +252,9 @@
 		<!-- Page Title -->
 		<div class="mb-8 text-center">
 			<h1 class="mb-2 font-heading text-4xl tracking-wide text-primary-darker sm:text-5xl">
-				赛事报名
+				{m.reg_title()}
 			</h1>
-			<p class="font-chinese text-slate-500">填写两位选手信息，系统自动分配组别</p>
+			<p class="font-chinese text-slate-500">{m.reg_subtitle()}</p>
 		</div>
 
 		<!-- ============================================ -->
@@ -312,7 +313,7 @@
 						<User class="h-4 w-4" />
 					</div>
 					<div>
-						<h2 class="font-chinese text-lg font-bold text-slate-900">报名人 (Player 1)</h2>
+						<h2 class="font-chinese text-lg font-bold text-slate-900">{m.reg_player1_title()}</h2>
 					</div>
 				</div>
 
@@ -321,7 +322,7 @@
 					<div class="grid grid-cols-2 gap-4">
 						<div>
 							<label for="p1-first" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-								First Name / 名 <span class="text-danger">*</span>
+								{m.reg_first_name()} <span class="text-danger">{m.reg_required()}</span>
 							</label>
 							<input
 								id="p1-first"
@@ -338,7 +339,7 @@
 						</div>
 						<div>
 							<label for="p1-last" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-								Last Name / 姓 <span class="text-danger">*</span>
+								{m.reg_last_name()} <span class="text-danger">{m.reg_required()}</span>
 							</label>
 							<input
 								id="p1-last"
@@ -358,7 +359,7 @@
 					<!-- Gender -->
 					<fieldset>
 						<legend class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							性别 <span class="text-danger">*</span>
+							{m.reg_gender()} <span class="text-danger">{m.reg_required()}</span>
 						</legend>
 						<div class="flex gap-3">
 							<button
@@ -367,7 +368,7 @@
 								class="flex-1 cursor-pointer rounded-xl border-2 px-4 py-3 font-chinese text-sm font-semibold transition-all duration-200
 								{player1.gender === 'male' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'}"
 							>
-								男
+								{m.reg_gender_male()}
 							</button>
 							<button
 								type="button"
@@ -375,7 +376,7 @@
 								class="flex-1 cursor-pointer rounded-xl border-2 px-4 py-3 font-chinese text-sm font-semibold transition-all duration-200
 								{player1.gender === 'female' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'}"
 							>
-								女
+								{m.reg_gender_female()}
 							</button>
 						</div>
 						{#if p1Errors.gender}
@@ -386,7 +387,7 @@
 					<!-- DOB -->
 					<div>
 						<label for="p1-dob" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							出生日期 <span class="text-danger">*</span>
+							{m.reg_dob()} <span class="text-danger">{m.reg_required()}</span>
 						</label>
 						<div class="flex items-center gap-3">
 							<input
@@ -402,7 +403,7 @@
 									class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold
 									{p1Age >= MIN_INDIVIDUAL_AGE ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'}"
 								>
-									{p1Age}岁
+									{p1Age}{m.reg_age_suffix()}
 								</span>
 							{/if}
 						</div>
@@ -414,7 +415,7 @@
 					<!-- Email -->
 					<div>
 						<label for="p1-email" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							电子邮箱 <span class="text-danger">*</span>
+							{m.reg_email()} <span class="text-danger">{m.reg_required()}</span>
 						</label>
 						<div class="relative">
 							<Mail class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -436,7 +437,7 @@
 					<!-- Phone -->
 					<div>
 						<label for="p1-phone" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							手机号 <span class="text-slate-400 font-normal">(选填)</span>
+							{m.reg_phone()} <span class="text-slate-400 font-normal">({m.reg_optional()})</span>
 						</label>
 						<div class="relative">
 							<Phone class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -453,7 +454,7 @@
 					<!-- WeChat -->
 					<div>
 						<label for="p1-wechat" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							微信号 <span class="text-slate-400 font-normal">(选填)</span>
+							{m.reg_wechat()} <span class="text-slate-400 font-normal">({m.reg_optional()})</span>
 						</label>
 						<div class="relative">
 							<MessageCircle class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -476,7 +477,7 @@
 						<Users class="h-4 w-4" />
 					</div>
 					<div>
-						<h2 class="font-chinese text-lg font-bold text-slate-900">搭档 (Player 2)</h2>
+						<h2 class="font-chinese text-lg font-bold text-slate-900">{m.reg_player2_title()}</h2>
 					</div>
 				</div>
 
@@ -485,7 +486,7 @@
 					<div class="grid grid-cols-2 gap-4">
 						<div>
 							<label for="p2-first" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-								First Name / 名 <span class="text-danger">*</span>
+								{m.reg_first_name()} <span class="text-danger">{m.reg_required()}</span>
 							</label>
 							<input
 								id="p2-first"
@@ -502,7 +503,7 @@
 						</div>
 						<div>
 							<label for="p2-last" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-								Last Name / 姓 <span class="text-danger">*</span>
+								{m.reg_last_name()} <span class="text-danger">{m.reg_required()}</span>
 							</label>
 							<input
 								id="p2-last"
@@ -522,7 +523,7 @@
 					<!-- Gender -->
 					<fieldset>
 						<legend class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							性别 <span class="text-danger">*</span>
+							{m.reg_gender()} <span class="text-danger">{m.reg_required()}</span>
 						</legend>
 						<div class="flex gap-3">
 							<button
@@ -531,7 +532,7 @@
 								class="flex-1 cursor-pointer rounded-xl border-2 px-4 py-3 font-chinese text-sm font-semibold transition-all duration-200
 								{player2.gender === 'male' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'}"
 							>
-								男
+								{m.reg_gender_male()}
 							</button>
 							<button
 								type="button"
@@ -539,7 +540,7 @@
 								class="flex-1 cursor-pointer rounded-xl border-2 px-4 py-3 font-chinese text-sm font-semibold transition-all duration-200
 								{player2.gender === 'female' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-500 hover:border-slate-300'}"
 							>
-								女
+								{m.reg_gender_female()}
 							</button>
 						</div>
 						{#if p2Errors.gender}
@@ -550,7 +551,7 @@
 					<!-- DOB -->
 					<div>
 						<label for="p2-dob" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							出生日期 <span class="text-danger">*</span>
+							{m.reg_dob()} <span class="text-danger">{m.reg_required()}</span>
 						</label>
 						<div class="flex items-center gap-3">
 							<input
@@ -566,7 +567,7 @@
 									class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold
 									{p2Age >= MIN_INDIVIDUAL_AGE ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'}"
 								>
-									{p2Age}岁
+									{p2Age}{m.reg_age_suffix()}
 								</span>
 							{/if}
 						</div>
@@ -578,7 +579,7 @@
 					<!-- Email -->
 					<div>
 						<label for="p2-email" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							电子邮箱 <span class="text-danger">*</span>
+							{m.reg_email()} <span class="text-danger">{m.reg_required()}</span>
 						</label>
 						<div class="relative">
 							<Mail class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -600,7 +601,7 @@
 					<!-- Phone -->
 					<div>
 						<label for="p2-phone" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							手机号 <span class="text-slate-400 font-normal">(选填)</span>
+							{m.reg_phone()} <span class="text-slate-400 font-normal">({m.reg_optional()})</span>
 						</label>
 						<div class="relative">
 							<Phone class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -617,7 +618,7 @@
 					<!-- WeChat -->
 					<div>
 						<label for="p2-wechat" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
-							微信号 <span class="text-slate-400 font-normal">(选填)</span>
+							{m.reg_wechat()} <span class="text-slate-400 font-normal">({m.reg_optional()})</span>
 						</label>
 						<div class="relative">
 							<MessageCircle class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -641,7 +642,7 @@
 						class="rounded-2xl border p-5
 						{autoCategory === 'ineligible' ? 'border-danger/20 bg-danger/5' : 'border-primary/20 bg-primary/5'}"
 					>
-						<div class="mb-1 font-chinese text-xs font-medium text-slate-500">组合年龄</div>
+						<div class="mb-1 font-chinese text-xs font-medium text-slate-500">{m.reg_combined_age()}</div>
 						<div class="flex items-baseline gap-2">
 							<span
 								class="font-heading text-3xl
@@ -649,7 +650,7 @@
 							>
 								{combinedAge}
 							</span>
-							<span class="font-chinese text-sm text-slate-500">岁</span>
+							<span class="font-chinese text-sm text-slate-500">{m.reg_age_suffix()}</span>
 						</div>
 						{#if autoCategory && autoCategory !== 'ineligible'}
 							<div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-chinese text-xs font-bold text-primary">
@@ -659,7 +660,7 @@
 						{:else if autoCategory === 'ineligible'}
 							<div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-3 py-1 font-chinese text-xs font-bold text-danger">
 								<AlertCircle class="h-3 w-3" />
-								不符合参赛条件（需 ≥ 80岁）
+								{m.reg_ineligible()}
 							</div>
 						{/if}
 					</div>
@@ -667,12 +668,12 @@
 					<!-- Gender Type Card -->
 					{#if genderType}
 						<div class="rounded-2xl border border-cta/20 bg-cta/5 p-5">
-							<div class="mb-1 font-chinese text-xs font-medium text-slate-500">比赛类型</div>
+							<div class="mb-1 font-chinese text-xs font-medium text-slate-500">{m.reg_match_type()}</div>
 							<div class="font-heading text-3xl text-cta">
 								{genderTypeLabel}
 							</div>
 							<div class="mt-2 font-chinese text-xs text-slate-500">
-								{genderType === 'mens' ? 'Men\'s Doubles' : genderType === 'womens' ? 'Women\'s Doubles' : 'Mixed Doubles'}
+								{genderType === 'mens' ? m.reg_mens_en() : genderType === 'womens' ? m.reg_womens_en() : m.reg_mixed_en()}
 							</div>
 						</div>
 					{/if}
@@ -689,7 +690,7 @@
 						class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-4 font-chinese text-base font-bold text-white shadow-lg transition-all duration-200 sm:w-auto
 						{step1Valid ? 'bg-cta hover:-translate-y-0.5 hover:bg-cta-hover hover:shadow-xl' : 'bg-slate-300 cursor-not-allowed shadow-none'}"
 					>
-						下一步
+						{m.reg_next()}
 						<ChevronRight class="h-5 w-5" />
 					</button>
 				</div>
@@ -704,9 +705,9 @@
 
 			<!-- Category Card -->
 			<div class="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
-				<div class="mb-1 font-chinese text-sm font-medium text-slate-500">自动分配组别</div>
+				<div class="mb-1 font-chinese text-sm font-medium text-slate-500">{m.reg_auto_category()}</div>
 				<div class="font-heading text-3xl text-primary-darker">{categoryName}</div>
-				<div class="mt-1 font-chinese text-sm text-slate-500">{categoryNameEn} · 组合年龄 {combinedAge} 岁</div>
+				<div class="mt-1 font-chinese text-sm text-slate-500">{categoryNameEn} · {m.reg_combined_age_label()} {combinedAge} {m.reg_age_suffix()}</div>
 			</div>
 
 			<!-- Player Cards -->
@@ -716,7 +717,7 @@
 					<div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-3">
 						<div class="flex items-center gap-2">
 							<User class="h-4 w-4 text-primary" />
-							<span class="font-chinese text-sm font-bold text-slate-700">报名人</span>
+							<span class="font-chinese text-sm font-bold text-slate-700">{m.reg_registrant()}</span>
 						</div>
 						<button
 							type="button"
@@ -724,24 +725,24 @@
 							class="inline-flex cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 font-chinese text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/10"
 						>
 							<Pencil class="h-3 w-3" />
-							编辑
+							{m.reg_edit()}
 						</button>
 					</div>
 					<div class="grid grid-cols-2 gap-x-6 gap-y-3 p-6">
 						<div>
-							<div class="font-chinese text-xs text-slate-400">姓名</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_name_label()}</div>
 							<div class="font-chinese text-sm font-semibold text-slate-900">{player1.firstName} {player1.lastName}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">性别</div>
-							<div class="font-chinese text-sm font-semibold text-slate-900">{player1.gender === 'male' ? '男' : '女'}</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_gender_label()}</div>
+							<div class="font-chinese text-sm font-semibold text-slate-900">{player1.gender === 'male' ? m.reg_gender_male() : m.reg_gender_female()}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">年龄</div>
-							<div class="font-chinese text-sm font-semibold text-slate-900">{p1Age} 岁</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_age_label()}</div>
+							<div class="font-chinese text-sm font-semibold text-slate-900">{p1Age} {m.reg_age_suffix()}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">邮箱</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_email_label()}</div>
 							<div class="truncate font-chinese text-sm font-semibold text-slate-900">{player1.email}</div>
 						</div>
 					</div>
@@ -752,7 +753,7 @@
 					<div class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-3">
 						<div class="flex items-center gap-2">
 							<Users class="h-4 w-4 text-cta" />
-							<span class="font-chinese text-sm font-bold text-slate-700">搭档</span>
+							<span class="font-chinese text-sm font-bold text-slate-700">{m.reg_partner()}</span>
 						</div>
 						<button
 							type="button"
@@ -760,24 +761,24 @@
 							class="inline-flex cursor-pointer items-center gap-1 rounded-lg px-3 py-1.5 font-chinese text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/10"
 						>
 							<Pencil class="h-3 w-3" />
-							编辑
+							{m.reg_edit()}
 						</button>
 					</div>
 					<div class="grid grid-cols-2 gap-x-6 gap-y-3 p-6">
 						<div>
-							<div class="font-chinese text-xs text-slate-400">姓名</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_name_label()}</div>
 							<div class="font-chinese text-sm font-semibold text-slate-900">{player2.firstName} {player2.lastName}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">性别</div>
-							<div class="font-chinese text-sm font-semibold text-slate-900">{player2.gender === 'male' ? '男' : '女'}</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_gender_label()}</div>
+							<div class="font-chinese text-sm font-semibold text-slate-900">{player2.gender === 'male' ? m.reg_gender_male() : m.reg_gender_female()}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">年龄</div>
-							<div class="font-chinese text-sm font-semibold text-slate-900">{p2Age} 岁</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_age_label()}</div>
+							<div class="font-chinese text-sm font-semibold text-slate-900">{p2Age} {m.reg_age_suffix()}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">邮箱</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_email_label()}</div>
 							<div class="truncate font-chinese text-sm font-semibold text-slate-900">{player2.email}</div>
 						</div>
 					</div>
@@ -787,23 +788,23 @@
 			<!-- Summary Stats -->
 			<div class="mb-6 grid grid-cols-3 gap-3">
 				<div class="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
-					<div class="mb-1 font-chinese text-xs text-slate-400">组合年龄</div>
+					<div class="mb-1 font-chinese text-xs text-slate-400">{m.reg_combined_age_label()}</div>
 					<div class="font-heading text-2xl text-primary-darker">{combinedAge}</div>
 				</div>
 				<div class="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
-					<div class="mb-1 font-chinese text-xs text-slate-400">比赛类型</div>
+					<div class="mb-1 font-chinese text-xs text-slate-400">{m.reg_match_type()}</div>
 					<div class="font-heading text-2xl text-primary-darker">{genderTypeLabel}</div>
 				</div>
 				<div class="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
-					<div class="mb-1 font-chinese text-xs text-slate-400">报名费</div>
+					<div class="mb-1 font-chinese text-xs text-slate-400">{m.reg_fee_label()}</div>
 					<div class="font-heading text-2xl text-cta">$60</div>
-					<div class="font-chinese text-xs text-slate-400">$30/人</div>
+					<div class="font-chinese text-xs text-slate-400">{m.reg_fee_per_person()}</div>
 				</div>
 			</div>
 
 			<!-- Validation Checklist -->
 			<div class="mb-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-				<h3 class="mb-4 font-chinese text-sm font-bold text-slate-700">验证清单</h3>
+				<h3 class="mb-4 font-chinese text-sm font-bold text-slate-700">{m.reg_check_title()}</h3>
 				<div class="space-y-3">
 					{#each validationChecks as check}
 						<div class="flex items-center gap-3">
@@ -832,7 +833,7 @@
 						class="inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-slate-200 px-6 py-4 font-chinese text-base font-medium text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
 					>
 						<ChevronLeft class="h-5 w-5" />
-						上一步
+						{m.reg_prev()}
 					</button>
 					<button
 						type="button"
@@ -841,7 +842,7 @@
 						class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-4 font-chinese text-base font-bold text-white shadow-lg transition-all duration-200
 						{allChecksPass ? 'bg-cta hover:-translate-y-0.5 hover:bg-cta-hover hover:shadow-xl' : 'bg-slate-300 cursor-not-allowed shadow-none'}"
 					>
-						确认提交
+						{m.reg_submit()}
 						<Check class="h-5 w-5" />
 					</button>
 				</div>
@@ -860,22 +861,22 @@
 				</div>
 
 				<h2 class="mb-2 font-heading text-4xl tracking-wide text-primary-darker sm:text-5xl">
-					报名成功！
+					{m.reg_success_title()}
 				</h2>
 				<p class="mb-8 font-chinese text-slate-500">
-					您的报名信息已提交，请按以下方式完成缴费
+					{m.reg_success_subtitle()}
 				</p>
 
 				<!-- Confirmation Number -->
 				<div class="mb-8 rounded-2xl border border-primary/20 bg-white p-6 shadow-sm">
-					<div class="mb-1 font-chinese text-sm text-slate-500">确认号 / Confirmation Number</div>
+					<div class="mb-1 font-chinese text-sm text-slate-500">{m.reg_confirm_number()}</div>
 					<div class="flex items-center justify-center gap-3">
 						<span class="font-heading text-4xl text-primary-darker sm:text-5xl">#2026-0012</span>
 						<button
 							type="button"
 							onclick={() => navigator.clipboard.writeText('2026-0012')}
 							class="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-600"
-							aria-label="复制确认号"
+							aria-label="Copy"
 						>
 							<Copy class="h-5 w-5" />
 						</button>
@@ -884,22 +885,22 @@
 
 				<!-- Registration Summary -->
 				<div class="mb-8 rounded-2xl border border-slate-100 bg-white p-6 text-left shadow-sm">
-					<h3 class="mb-4 font-chinese text-sm font-bold text-slate-700">报名摘要</h3>
+					<h3 class="mb-4 font-chinese text-sm font-bold text-slate-700">{m.reg_summary_title()}</h3>
 					<div class="grid grid-cols-2 gap-4">
 						<div>
-							<div class="font-chinese text-xs text-slate-400">组别</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_summary_category()}</div>
 							<div class="font-chinese text-sm font-semibold text-slate-900">{categoryName}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">类型</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_summary_type()}</div>
 							<div class="font-chinese text-sm font-semibold text-slate-900">{genderTypeLabel}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">报名人</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_registrant()}</div>
 							<div class="font-chinese text-sm font-semibold text-slate-900">{player1.firstName} {player1.lastName}</div>
 						</div>
 						<div>
-							<div class="font-chinese text-xs text-slate-400">搭档</div>
+							<div class="font-chinese text-xs text-slate-400">{m.reg_partner()}</div>
 							<div class="font-chinese text-sm font-semibold text-slate-900">{player2.firstName} {player2.lastName}</div>
 						</div>
 					</div>
@@ -909,28 +910,28 @@
 				<div class="mb-8 rounded-2xl border border-cta/20 bg-cta/5 p-6 text-left">
 					<div class="mb-4 flex items-center gap-2">
 						<DollarSign class="h-5 w-5 text-cta" />
-						<h3 class="font-chinese text-sm font-bold text-slate-700">缴费方式（$60/队）</h3>
+						<h3 class="font-chinese text-sm font-bold text-slate-700">{m.reg_payment_title()}</h3>
 					</div>
 					<div class="space-y-3">
 						<div class="flex items-start gap-3">
 							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-cta shadow-sm">1</div>
 							<div>
-								<div class="font-chinese text-sm font-semibold text-slate-900">e-Transfer</div>
-								<div class="font-chinese text-xs text-slate-500">发送至 badminton@saskatoon.example</div>
+								<div class="font-chinese text-sm font-semibold text-slate-900">{m.reg_payment_etransfer()}</div>
+								<div class="font-chinese text-xs text-slate-500">{m.reg_payment_etransfer_desc()}</div>
 							</div>
 						</div>
 						<div class="flex items-start gap-3">
 							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-cta shadow-sm">2</div>
 							<div>
-								<div class="font-chinese text-sm font-semibold text-slate-900">现场现金</div>
-								<div class="font-chinese text-xs text-slate-500">比赛当天现场缴纳</div>
+								<div class="font-chinese text-sm font-semibold text-slate-900">{m.reg_payment_cash()}</div>
+								<div class="font-chinese text-xs text-slate-500">{m.reg_payment_cash_desc()}</div>
 							</div>
 						</div>
 						<div class="flex items-start gap-3">
 							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-cta shadow-sm">3</div>
 							<div>
-								<div class="font-chinese text-sm font-semibold text-slate-900">微信支付</div>
-								<div class="font-chinese text-xs text-slate-500">联系组委会获取收款码</div>
+								<div class="font-chinese text-sm font-semibold text-slate-900">{m.reg_payment_wechat()}</div>
+								<div class="font-chinese text-xs text-slate-500">{m.reg_payment_wechat_desc()}</div>
 							</div>
 						</div>
 					</div>
@@ -943,14 +944,14 @@
 						class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 font-chinese text-base font-bold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-xl"
 					>
 						<Users class="h-5 w-5" />
-						查看参赛队伍
+						{m.reg_view_teams()}
 					</a>
 					<a
 						href="/"
 						class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-slate-200 px-8 py-4 font-chinese text-base font-medium text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
 					>
 						<Home class="h-5 w-5" />
-						返回首页
+						{m.reg_back_home()}
 					</a>
 				</div>
 			</div>

@@ -1,5 +1,11 @@
 <script lang="ts">
 	import { Users, Trophy, Filter, ChevronRight } from 'lucide-svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
+
+	function localizedName(zh: string, en: string): string {
+		return getLocale() === 'zh' ? zh : en;
+	}
 
 	// --- Types ---
 	type GenderType = 'mens' | 'womens' | 'mixed';
@@ -263,11 +269,11 @@
 	const totalSlots = $derived(categories.reduce((sum, cat) => sum + cat.maxTeams, 0));
 
 	// --- Helpers ---
-	const genderTypeLabels: Record<GenderType, { zh: string; color: string; bg: string }> = {
-		mens: { zh: '男双', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-		womens: { zh: '女双', color: 'text-pink-700', bg: 'bg-pink-50 border-pink-200' },
-		mixed: { zh: '混双', color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' }
-	};
+	let genderTypeLabels = $derived<Record<GenderType, { label: string; color: string; bg: string }>>({
+		mens: { label: m.reg_mens(), color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+		womens: { label: m.reg_womens(), color: 'text-pink-700', bg: 'bg-pink-50 border-pink-200' },
+		mixed: { label: m.reg_mixed(), color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' }
+	});
 
 	function maskName(nameEn: string, nameZh?: string): { en: string; zh: string } {
 		const parts = nameEn.split(' ');
@@ -281,7 +287,7 @@
 </script>
 
 <svelte:head>
-	<title>参赛队伍 - 萨斯卡通羽毛球双打锦标赛 2026</title>
+	<title>{m.teams_page_title()}</title>
 </svelte:head>
 
 <!-- ============================================ -->
@@ -290,9 +296,9 @@
 <section class="bg-primary-darker pt-24 pb-12 text-white sm:pt-28 sm:pb-16">
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 		<div class="text-center">
-			<h1 class="mb-3 font-heading text-4xl tracking-wide sm:text-5xl">参赛队伍</h1>
+			<h1 class="mb-3 font-heading text-4xl tracking-wide sm:text-5xl">{m.teams_title()}</h1>
 			<p class="mx-auto max-w-2xl font-chinese text-base text-white/70">
-				查看已报名的参赛队伍，名额有限，快来加入！
+				{m.teams_subtitle()}
 			</p>
 		</div>
 
@@ -304,7 +310,7 @@
 					<div class="font-heading text-4xl sm:text-5xl">
 						{count}<span class="text-xl text-white/50">/{cat.maxTeams}</span>
 					</div>
-					<div class="mt-1 font-chinese text-sm font-medium text-white/80">{cat.nameZh}</div>
+					<div class="mt-1 font-chinese text-sm font-medium text-white/80">{localizedName(cat.nameZh, cat.nameEn)}</div>
 				</div>
 			{/each}
 			<div class="h-12 w-px bg-white/20"></div>
@@ -312,7 +318,7 @@
 				<div class="font-heading text-4xl sm:text-5xl">
 					{totalTeams}<span class="text-xl text-white/50">/{totalSlots}</span>
 				</div>
-				<div class="mt-1 font-chinese text-sm font-medium text-white/80">总报名</div>
+				<div class="mt-1 font-chinese text-sm font-medium text-white/80">{m.teams_total()}</div>
 			</div>
 		</div>
 	</div>
@@ -328,14 +334,14 @@
 
 			<!-- Category tabs -->
 			<div class="flex items-center gap-2">
-				<span class="font-chinese text-xs font-medium text-slate-400">组别:</span>
+				<span class="font-chinese text-xs font-medium text-slate-400">{m.teams_filter_category()}</span>
 				<div class="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
 					<button
 						type="button"
 						class="cursor-pointer rounded-md px-3 py-1.5 font-chinese text-xs font-medium transition-all {activeCategory === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
 						onclick={() => (activeCategory = 'all')}
 					>
-						全部
+						{m.teams_filter_all()}
 					</button>
 					{#each categories as cat}
 						<button
@@ -343,7 +349,7 @@
 							class="cursor-pointer rounded-md px-3 py-1.5 font-chinese text-xs font-medium transition-all {activeCategory === cat.id ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
 							onclick={() => (activeCategory = cat.id)}
 						>
-							{cat.nameZh}
+							{localizedName(cat.nameZh, cat.nameEn)}
 						</button>
 					{/each}
 				</div>
@@ -353,14 +359,14 @@
 
 			<!-- Gender type tabs -->
 			<div class="flex items-center gap-2">
-				<span class="font-chinese text-xs font-medium text-slate-400">类型:</span>
+				<span class="font-chinese text-xs font-medium text-slate-400">{m.teams_filter_type()}</span>
 				<div class="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
 					<button
 						type="button"
 						class="cursor-pointer rounded-md px-3 py-1.5 font-chinese text-xs font-medium transition-all {activeGenderType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
 						onclick={() => (activeGenderType = 'all')}
 					>
-						全部
+						{m.teams_filter_all()}
 					</button>
 					{#each Object.entries(genderTypeLabels) as [key, label]}
 						<button
@@ -368,7 +374,7 @@
 							class="cursor-pointer rounded-md px-3 py-1.5 font-chinese text-xs font-medium transition-all {activeGenderType === key ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
 							onclick={() => (activeGenderType = key)}
 						>
-							{label.zh}
+							{label.label}
 						</button>
 					{/each}
 				</div>
@@ -379,7 +385,7 @@
 			<!-- Search -->
 			<input
 				type="text"
-				placeholder="搜索选手姓名..."
+				placeholder={m.teams_search_placeholder()}
 				class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-chinese text-xs text-slate-700 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none w-40"
 				bind:value={searchQuery}
 			/>
@@ -409,12 +415,12 @@
 						</div>
 					</div>
 					<div class="flex items-center gap-4 font-chinese text-sm text-slate-500">
-						<span><span class="font-bold text-emerald-600">{confirmed}</span> 已确认</span>
+						<span><span class="font-bold text-emerald-600">{confirmed}</span> {m.teams_confirmed()}</span>
 						{#if pending > 0}
-							<span><span class="font-bold text-amber-600">{pending}</span> 待确认</span>
+							<span><span class="font-bold text-amber-600">{pending}</span> {m.teams_pending()}</span>
 						{/if}
 						<span class="text-slate-300">|</span>
-						<span><span class="font-bold text-slate-700">{cat.teams.length}</span>/{cat.maxTeams} 对</span>
+						<span><span class="font-bold text-slate-700">{cat.teams.length}</span>/{cat.maxTeams} {m.teams_pairs_unit()}</span>
 					</div>
 				</div>
 
@@ -434,11 +440,11 @@
 							<thead>
 								<tr class="border-b border-slate-100 bg-slate-50/80">
 									<th class="px-4 py-3 text-left font-chinese text-xs font-semibold tracking-wide text-slate-500">#</th>
-									<th class="px-4 py-3 text-left font-chinese text-xs font-semibold tracking-wide text-slate-500">选手 1</th>
-									<th class="px-4 py-3 text-left font-chinese text-xs font-semibold tracking-wide text-slate-500">选手 2</th>
-									<th class="px-4 py-3 text-center font-chinese text-xs font-semibold tracking-wide text-slate-500">类型</th>
-									<th class="px-4 py-3 text-center font-chinese text-xs font-semibold tracking-wide text-slate-500">年龄和</th>
-									<th class="px-4 py-3 text-center font-chinese text-xs font-semibold tracking-wide text-slate-500">状态</th>
+									<th class="px-4 py-3 text-left font-chinese text-xs font-semibold tracking-wide text-slate-500">{m.teams_player1()}</th>
+									<th class="px-4 py-3 text-left font-chinese text-xs font-semibold tracking-wide text-slate-500">{m.teams_player2()}</th>
+									<th class="px-4 py-3 text-center font-chinese text-xs font-semibold tracking-wide text-slate-500">{m.teams_type_header()}</th>
+									<th class="px-4 py-3 text-center font-chinese text-xs font-semibold tracking-wide text-slate-500">{m.teams_age_sum()}</th>
+									<th class="px-4 py-3 text-center font-chinese text-xs font-semibold tracking-wide text-slate-500">{m.teams_status()}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -482,25 +488,25 @@
 										<!-- Gender type -->
 										<td class="px-4 py-3.5 text-center">
 											<span class="inline-flex items-center justify-center rounded-full border px-3 py-1 font-chinese text-xs font-semibold {gtl.bg} {gtl.color}">
-												{gtl.zh}
+												{gtl.label}
 											</span>
 										</td>
 										<!-- Combined age -->
 										<td class="px-4 py-3.5 text-center">
 											<span class="font-heading text-sm font-bold text-slate-700">{team.combinedAge}</span>
-											<span class="font-chinese text-xs text-slate-400">岁</span>
+											<span class="font-chinese text-xs text-slate-400">{m.reg_age_suffix()}</span>
 										</td>
 										<!-- Status -->
 										<td class="px-4 py-3.5 text-center">
 											{#if team.status === 'confirmed'}
 												<span class="inline-flex items-center gap-1.5 font-chinese text-xs font-medium text-emerald-600">
 													<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-													已确认
+													{m.teams_confirmed()}
 												</span>
 											{:else}
 												<span class="inline-flex items-center gap-1.5 font-chinese text-xs font-medium text-amber-600">
 													<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-													待确认
+													{m.teams_pending()}
 												</span>
 											{/if}
 										</td>
@@ -529,28 +535,28 @@
 											</span>
 										{/if}
 										<span class="inline-flex rounded-full border px-2 py-0.5 font-chinese text-xs font-semibold {gtl.bg} {gtl.color}">
-											{gtl.zh}
+											{gtl.label}
 										</span>
 									</div>
 									<div class="flex items-center gap-2">
-										<span class="font-heading text-sm font-bold text-slate-700">{team.combinedAge}<span class="font-chinese text-xs font-normal text-slate-400">岁</span></span>
+										<span class="font-heading text-sm font-bold text-slate-700">{team.combinedAge}<span class="font-chinese text-xs font-normal text-slate-400">{m.reg_age_suffix()}</span></span>
 										{#if team.status === 'confirmed'}
-											<span class="h-2 w-2 rounded-full bg-emerald-500" title="已确认"></span>
+											<span class="h-2 w-2 rounded-full bg-emerald-500" title={m.teams_confirmed()}></span>
 										{:else}
-											<span class="h-2 w-2 rounded-full bg-amber-500" title="待确认"></span>
+											<span class="h-2 w-2 rounded-full bg-amber-500" title={m.teams_pending()}></span>
 										{/if}
 									</div>
 								</div>
 								<div class="grid grid-cols-2 gap-3">
 									<div>
-										<div class="mb-0.5 font-chinese text-[10px] text-slate-400">选手 1</div>
+										<div class="mb-0.5 font-chinese text-[10px] text-slate-400">{m.teams_player1()}</div>
 										<div class="font-body text-sm font-semibold text-slate-800">{p1.en}</div>
 										{#if p1.zh}
 											<div class="font-chinese text-xs text-slate-400">{p1.zh}</div>
 										{/if}
 									</div>
 									<div>
-										<div class="mb-0.5 font-chinese text-[10px] text-slate-400">选手 2</div>
+										<div class="mb-0.5 font-chinese text-[10px] text-slate-400">{m.teams_player2()}</div>
 										<div class="font-body text-sm font-semibold text-slate-800">{p2.en}</div>
 										{#if p2.zh}
 											<div class="font-chinese text-xs text-slate-400">{p2.zh}</div>
@@ -565,8 +571,8 @@
 						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
 							<Users class="h-8 w-8 text-slate-400" />
 						</div>
-						<h3 class="mb-1 font-chinese text-base font-medium text-slate-700">暂无参赛队伍</h3>
-						<p class="font-chinese text-sm text-slate-500">您可以尝试调整筛选条件或搜索其他姓名</p>
+						<h3 class="mb-1 font-chinese text-base font-medium text-slate-700">{m.teams_empty_title()}</h3>
+						<p class="font-chinese text-sm text-slate-500">{m.teams_empty_desc()}</p>
 					</div>
 				{/if}
 			</div>
@@ -579,15 +585,15 @@
 <!-- ============================================ -->
 <section class="bg-primary-darker py-14 text-center text-white sm:py-16">
 	<div class="mx-auto max-w-2xl px-4">
-		<h2 class="mb-3 font-heading text-3xl tracking-wide sm:text-4xl">还没报名？</h2>
+		<h2 class="mb-3 font-heading text-3xl tracking-wide sm:text-4xl">{m.teams_cta_title()}</h2>
 		<p class="mb-6 font-chinese text-base text-white/70">
-			名额有限，先到先得。找好搭档，一起参赛吧！
+			{m.teams_cta_desc()}
 		</p>
 		<a
 			href="/register"
 			class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cta px-10 py-4 font-chinese text-lg font-bold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-cta-hover hover:shadow-xl"
 		>
-			立即报名
+			{m.cta_register()}
 			<ChevronRight class="h-5 w-5" />
 		</a>
 	</div>

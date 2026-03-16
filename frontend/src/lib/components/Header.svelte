@@ -1,15 +1,17 @@
 <script lang="ts">
-	import { Menu, X, Globe } from 'lucide-svelte';
+	import { Menu, X } from 'lucide-svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import LanguageSwitcher from './LanguageSwitcher.svelte';
 
 	let mobileMenuOpen = $state(false);
 
-	const navItems = [
-		{ label: '首页', href: '/' },
-		{ label: '报名', href: '/register' },
-		{ label: '队伍', href: '/teams' },
-		{ label: '规则', href: '/#rules' },
-		{ label: '赞助', href: '/#sponsors' }
-	];
+	const navItems = $derived([
+		{ label: m.nav_home(), href: '/' },
+		{ label: m.nav_register(), href: '/register' },
+		{ label: m.nav_teams(), href: '/teams' },
+		{ label: m.nav_rules(), href: '/#rules' },
+		{ label: m.nav_sponsors(), href: '/#sponsors' }
+	]);
 
 	function toggleMobileMenu() {
 		mobileMenuOpen = !mobileMenuOpen;
@@ -27,9 +29,9 @@
 			</div>
 			<div class="hidden sm:block">
 				<div class="font-chinese text-sm font-bold text-primary-darker leading-tight">
-					萨斯卡通羽毛球
+					{m.logo_title()}
 				</div>
-				<div class="font-chinese text-xs text-slate-500 leading-tight">双打锦标赛</div>
+				<div class="font-chinese text-xs text-slate-500 leading-tight">{m.logo_subtitle()}</div>
 			</div>
 		</a>
 
@@ -47,13 +49,7 @@
 
 		<!-- Right: Language Switcher + Mobile Menu -->
 		<div class="flex items-center gap-2">
-			<button
-				type="button"
-				class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:border-primary hover:text-primary"
-			>
-				<Globe class="h-4 w-4" />
-				<span class="font-chinese text-xs">中/EN</span>
-			</button>
+			<LanguageSwitcher />
 
 			<!-- Mobile menu button -->
 			<button

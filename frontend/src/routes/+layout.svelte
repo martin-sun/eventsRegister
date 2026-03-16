@@ -3,13 +3,19 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/Header.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
 
 	let { children } = $props();
+
+	$effect(() => {
+		document.documentElement.lang = getLocale();
+	});
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<meta name="description" content="萨斯卡通羽毛球双打锦标赛 - Saskatoon Badminton Doubles Championship 2026" />
+	<meta name="description" content={m.site_subtitle()} />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col">

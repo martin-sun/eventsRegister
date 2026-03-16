@@ -39,6 +39,7 @@
 		"wrangler": "^4.63.0"
 	},
 	"dependencies": {
+		"@inlang/paraglide-js": "^2.15.0",
 		"lucide-svelte": "^0.577.0"
 	}
 }
