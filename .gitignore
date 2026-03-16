@@ -10,6 +10,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# AI tools
+.claude/
+.agent/
+.qoder/
+
 # Env
 .env
 .env.*
