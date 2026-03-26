@@ -13,9 +13,12 @@
 		Medal
 	} from 'lucide-svelte';
 	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
+
+	let { data } = $props();
 
 	// --- Countdown Timer ---
-	const eventDate = new Date('2026-05-24T09:30:00');
+	let eventDate = $derived(new Date(data.config.tournament_date));
 
 	let now = $state(new Date());
 	let countdown = $derived(getCountdown(now));
@@ -38,27 +41,50 @@
 		return () => clearInterval(timer);
 	});
 
-	// --- Mock Data ---
-	let categories = $derived([
-		{
-			id: 'over100',
-			name: m.category_100(),
-			nameEn: m.category_100_en(),
-			description: m.category_100_desc(),
-			registered: 12,
-			max: 32,
-			color: 'primary'
-		},
-		{
-			id: 'over80',
-			name: m.category_80(),
-			nameEn: m.category_80_en(),
-			description: m.category_80_desc(),
-			registered: 8,
-			max: 32,
-			color: 'cta'
-		}
-	]);
+	// --- Category descriptions keyed by slug ---
+	const categoryDescriptions: Record<string, () => string> = {
+		'doubles-100': () => m.category_100_desc(),
+		'doubles-80': () => m.category_80_desc()
+	};
+
+	const categoryColors: Record<string, string> = {
+		'doubles-100': 'primary',
+		'doubles-80': 'cta'
+	};
+
+	const categoryImages: Record<string, string> = {
+		'doubles-100': 'cat_over100',
+		'doubles-80': 'cat_over80'
+	};
+
+	let categories = $derived(
+		data.categories.map((cat) => ({
+			id: cat.slug,
+			name: getLocale() === 'zh' ? cat.name_zh : cat.name_en,
+			nameEn: cat.name_en,
+			description: categoryDescriptions[cat.slug]?.() ?? '',
+			registered: cat.registered_teams,
+			max: cat.max_teams,
+			color: categoryColors[cat.slug] ?? 'primary',
+			image: categoryImages[cat.slug] ?? 'cat_over100'
+		}))
+	);
+
+	// --- Sponsors grouped by level ---
+	const sponsorLevelOrder = ['title', 'diamond', 'platinum', 'gold', 'friend', 'media'] as const;
+
+	function sponsorName(s: { name_zh: string; name_en: string }): string {
+		return getLocale() === 'zh' ? s.name_zh : s.name_en;
+	}
+
+	let sponsorsByLevel = $derived(
+		Object.fromEntries(
+			sponsorLevelOrder.map((level) => [
+				level,
+				data.sponsors.filter((s) => s.level === level)
+			])
+		)
+	);
 
 	let highlights = $derived([
 		{ icon: Target, title: m.highlight_format(), desc: m.highlight_format_desc() },
@@ -81,11 +107,6 @@
 		{ rank: m.prize_fourth(), main: '$100', consolation: '$40' }
 	]);
 
-	const sponsors = {
-		title: { name: '林与唐地产', nameEn: 'Lin & Tang Realty' },
-		diamond: ['赞助商 A', '赞助商 B', '赞助商 C'],
-		gold: ['赞助商 D', '赞助商 E', '赞助商 F', '赞助商 G']
-	};
 </script>
 
 <svelte:head>
@@ -191,7 +212,7 @@
 					<!-- Active Image Banner -->
 					<div class="relative h-48 w-full overflow-hidden sm:h-56">
 						<img
-							src="/images/{cat.id === 'over100' ? 'cat_over100' : 'cat_over80'}.png"
+							src="/images/{cat.image}.png"
 							alt="{cat.name}"
 							class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
 						/>
@@ -466,45 +487,66 @@
 		</div>
 
 		<!-- Title Sponsor -->
-		<div class="mb-10 text-center">
-			<p class="mb-4 font-chinese text-xs tracking-wider text-slate-400 uppercase">{m.sponsor_title_level()}</p>
-			<div
-				class="group inline-block rounded-2xl border-2 border-cta/20 bg-surface-warm px-12 py-8 transition-all duration-200 hover:border-cta/40 hover:shadow-md"
-			>
-				<div class="font-heading text-4xl tracking-wide text-primary-darker sm:text-5xl">
-					{sponsors.title.name}
-				</div>
-				<div class="mt-1 font-body text-sm text-slate-400">{sponsors.title.nameEn}</div>
+		{#if sponsorsByLevel.title?.length}
+			<div class="mb-10 text-center">
+				<p class="mb-4 font-chinese text-xs tracking-wider text-slate-400 uppercase">{m.sponsor_title_level()}</p>
+				{#each sponsorsByLevel.title as s}
+					<div
+						class="group inline-block rounded-2xl border-2 border-cta/20 bg-surface-warm px-12 py-8 transition-all duration-200 hover:border-cta/40 hover:shadow-md"
+					>
+						<div class="font-heading text-4xl tracking-wide text-primary-darker sm:text-5xl">
+							{s.name_zh}
+						</div>
+						<div class="mt-1 font-body text-sm text-slate-400">{s.name_en}</div>
+					</div>
+				{/each}
 			</div>
-		</div>
+		{/if}
 
 		<!-- Diamond Sponsors -->
-		<div class="mb-8">
-			<p class="mb-4 text-center font-chinese text-xs tracking-wider text-slate-400 uppercase">
-				{m.sponsor_diamond()}
-			</p>
-			<div class="flex flex-wrap items-center justify-center gap-6">
-				{#each sponsors.diamond as name}
-					<div class="rounded-xl border border-slate-100 bg-slate-50 px-8 py-4 font-chinese text-base font-medium text-slate-600 transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
-						{name}
-					</div>
-				{/each}
+		{#if sponsorsByLevel.diamond?.length}
+			<div class="mb-8">
+				<p class="mb-4 text-center font-chinese text-xs tracking-wider text-slate-400 uppercase">
+					{m.sponsor_diamond()}
+				</p>
+				<div class="flex flex-wrap items-center justify-center gap-6">
+					{#each sponsorsByLevel.diamond as s}
+						<div class="rounded-xl border border-slate-100 bg-slate-50 px-8 py-4 font-chinese text-base font-medium text-slate-600 transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+							{sponsorName(s)}
+						</div>
+					{/each}
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<!-- Gold Sponsors -->
-		<div>
-			<p class="mb-4 text-center font-chinese text-xs tracking-wider text-slate-400 uppercase">
-				{m.sponsor_gold()}
-			</p>
-			<div class="flex flex-wrap items-center justify-center gap-4">
-				{#each sponsors.gold as name}
-					<div class="rounded-lg border border-slate-100 px-6 py-3 font-chinese text-sm text-slate-500 transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
-						{name}
-					</div>
-				{/each}
+		{#if sponsorsByLevel.gold?.length}
+			<div class="mb-8">
+				<p class="mb-4 text-center font-chinese text-xs tracking-wider text-slate-400 uppercase">
+					{m.sponsor_gold()}
+				</p>
+				<div class="flex flex-wrap items-center justify-center gap-4">
+					{#each sponsorsByLevel.gold as s}
+						<div class="rounded-lg border border-slate-100 px-6 py-3 font-chinese text-sm text-slate-500 transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+							{sponsorName(s)}
+						</div>
+					{/each}
+				</div>
 			</div>
-		</div>
+		{/if}
+
+		<!-- Media / Other Sponsors -->
+		{#if sponsorsByLevel.media?.length || sponsorsByLevel.friend?.length}
+			<div>
+				<div class="flex flex-wrap items-center justify-center gap-4">
+					{#each [...(sponsorsByLevel.media ?? []), ...(sponsorsByLevel.friend ?? [])] as s}
+						<div class="rounded-lg border border-slate-100 px-6 py-3 font-chinese text-sm text-slate-500 transition-all duration-200 hover:border-primary/20 hover:shadow-sm">
+							{sponsorName(s)}
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 	</div>
 </section>

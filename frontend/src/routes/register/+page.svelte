@@ -17,16 +17,25 @@
 		Home,
 		Pencil,
 		DollarSign,
-		Heart
+		Heart,
+		Clock
 	} from 'lucide-svelte';
 	import { m } from '$lib/paraglide/messages.js';
+	import { getLocale } from '$lib/paraglide/runtime.js';
+	import { enhance } from '$app/forms';
 
-	// --- Constants ---
-	const TOURNAMENT_DATE = new Date('2026-05-24');
-	const MIN_INDIVIDUAL_AGE = 35;
+	let { data, form } = $props();
+
+	// --- Constants (from tournament config) ---
+	let TOURNAMENT_DATE = $derived(new Date(data.config.tournament_date));
+	let MIN_INDIVIDUAL_AGE = $derived(data.config.min_age);
 
 	// --- State ---
 	let currentStep = $state(1);
+	let submitting = $state(false);
+	let serverError = $state<string | null>(null);
+	let registrationResult = $state<{ teamId: string; status: string; genderType: string; combinedAge: number } | null>(null);
+	let copiedField = $state<string | null>(null);
 
 	let player1 = $state({
 		firstName: '',
@@ -82,23 +91,41 @@
 	let p2Age = $derived(calculateAge(player2.dob));
 	let combinedAge = $derived(p1Age !== null && p2Age !== null ? p1Age + p2Age : null);
 
+	// All eligible categories sorted by min_age_sum descending (highest first)
+	let eligibleCategories = $derived.by(() => {
+		if (combinedAge === null) return [];
+		return data.categories
+			.filter((c) => combinedAge >= c.min_age_sum && c.is_open)
+			.sort((a, b) => b.min_age_sum - a.min_age_sum);
+	});
+
+	// User-selected category ID (null = use default highest)
+	let selectedCategoryId = $state<string | null>(null);
+
+	// Resolved selected category: user pick if valid, otherwise default to highest eligible
+	let selectedCategory = $derived.by(() => {
+		if (eligibleCategories.length === 0) return null;
+		if (selectedCategoryId) {
+			const found = eligibleCategories.find((c) => c.id === selectedCategoryId);
+			if (found) return found;
+		}
+		return eligibleCategories[0];
+	});
+
 	let autoCategory = $derived.by(() => {
 		if (combinedAge === null) return null;
-		if (combinedAge >= 100) return 'over100';
-		if (combinedAge >= 80) return 'over80';
+		if (selectedCategory) return selectedCategory.slug;
 		return 'ineligible';
 	});
 
 	let categoryName = $derived.by(() => {
-		if (autoCategory === 'over100') return m.category_100();
-		if (autoCategory === 'over80') return m.category_80();
+		if (selectedCategory) return getLocale() === 'zh' ? selectedCategory.name_zh : selectedCategory.name_en;
 		if (autoCategory === 'ineligible') return m.reg_ineligible();
 		return '';
 	});
 
 	let categoryNameEn = $derived.by(() => {
-		if (autoCategory === 'over100') return m.category_100_en();
-		if (autoCategory === 'over80') return m.category_80_en();
+		if (selectedCategory) return selectedCategory.name_en;
 		if (autoCategory === 'ineligible') return 'Ineligible';
 		return '';
 	});
@@ -185,8 +212,7 @@
 	let step1Valid = $derived(
 		isPlayerValid(player1, p1Age) &&
 			isPlayerValid(player2, p2Age) &&
-			autoCategory !== null &&
-			autoCategory !== 'ineligible'
+			selectedCategory !== null
 	);
 
 	let validationChecks = $derived.by(() => [
@@ -196,7 +222,7 @@
 		},
 		{
 			label: m.reg_check_combined(),
-			passed: autoCategory !== null && autoCategory !== 'ineligible'
+			passed: selectedCategory !== null
 		},
 		{
 			label: m.reg_check_info(),
@@ -225,12 +251,34 @@
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
-	function handleSubmit() {
-		if (allChecksPass) {
-			currentStep = 3;
-			window.scrollTo({ top: 0, behavior: 'smooth' });
-		}
+	function handleEnhance() {
+		submitting = true;
+		serverError = null;
+		return async ({ result }: { result: any }) => {
+			submitting = false;
+			if (result.type === 'success' && result.data?.success) {
+				registrationResult = result.data;
+				currentStep = 3;
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			} else if (result.type === 'failure') {
+				serverError = result.data?.error ?? 'unknown_error';
+			}
+		};
 	}
+
+	// Map server error keys to i18n messages
+	const errorMessages: Record<string, () => string> = {
+		combined_age_insufficient: () => m.reg_err_combined_age(),
+		individual_age_insufficient: () => m.reg_err_individual_age(),
+		player_already_registered: () => m.reg_err_already_registered(),
+		registration_closed: () => m.reg_err_registration_closed(),
+		rate_limited: () => m.reg_err_rate_limited(),
+		email_conflict: () => m.reg_err_email_conflict(),
+		missing_player1_fields: () => m.reg_err_missing_fields(),
+		missing_player2_fields: () => m.reg_err_missing_fields(),
+		missing_category: () => m.reg_err_missing_fields(),
+		unknown_error: () => m.reg_err_unknown()
+	};
 
 	// --- Step labels ---
 	let steps = $derived([
@@ -653,10 +701,28 @@
 							<span class="font-chinese text-sm text-slate-500">{m.reg_age_suffix()}</span>
 						</div>
 						{#if autoCategory && autoCategory !== 'ineligible'}
-							<div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-chinese text-xs font-bold text-primary">
-								<Trophy class="h-3 w-3" />
-								{categoryName}
-							</div>
+							{#if eligibleCategories.length > 1}
+								<!-- Multiple eligible categories: show selector -->
+								<div class="mt-3">
+									<div class="mb-1.5 font-chinese text-xs text-slate-500">{m.reg_select_category()}</div>
+									<select
+										class="w-full rounded-xl border border-primary/30 bg-white px-3 py-2 font-chinese text-sm font-bold text-primary focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+										value={selectedCategory?.id ?? ''}
+										onchange={(e) => { selectedCategoryId = (e.target as HTMLSelectElement).value; }}
+									>
+										{#each eligibleCategories as cat, i}
+											<option value={cat.id}>
+												{getLocale() === 'zh' ? cat.name_zh : cat.name_en}{i === 0 ? ` ${m.reg_category_recommended()}` : ''}
+											</option>
+										{/each}
+									</select>
+								</div>
+							{:else}
+								<div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-chinese text-xs font-bold text-primary">
+									<Trophy class="h-3 w-3" />
+									{categoryName}
+								</div>
+							{/if}
 						{:else if autoCategory === 'ineligible'}
 							<div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-3 py-1 font-chinese text-xs font-bold text-danger">
 								<AlertCircle class="h-3 w-3" />
@@ -702,6 +768,33 @@
 		<!-- STEP 2: CONFIRMATION                        -->
 		<!-- ============================================ -->
 		{:else if currentStep === 2}
+		<form method="POST" action="?/register" use:enhance={handleEnhance}>
+			<!-- Hidden fields for form submission -->
+			<input type="hidden" name="p1_firstName" value={player1.firstName} />
+			<input type="hidden" name="p1_lastName" value={player1.lastName} />
+			<input type="hidden" name="p1_gender" value={player1.gender} />
+			<input type="hidden" name="p1_dob" value={player1.dob} />
+			<input type="hidden" name="p1_email" value={player1.email} />
+			<input type="hidden" name="p1_phone" value={player1.phone} />
+			<input type="hidden" name="p1_wechat" value={player1.wechat} />
+			<input type="hidden" name="p2_firstName" value={player2.firstName} />
+			<input type="hidden" name="p2_lastName" value={player2.lastName} />
+			<input type="hidden" name="p2_gender" value={player2.gender} />
+			<input type="hidden" name="p2_dob" value={player2.dob} />
+			<input type="hidden" name="p2_email" value={player2.email} />
+			<input type="hidden" name="p2_phone" value={player2.phone} />
+			<input type="hidden" name="p2_wechat" value={player2.wechat} />
+			<input type="hidden" name="category_id" value={selectedCategory?.id ?? ''} />
+
+			<!-- Server Error -->
+			{#if serverError}
+				<div class="mb-6 rounded-2xl border border-danger/20 bg-danger/5 p-4 text-center">
+					<div class="flex items-center justify-center gap-2 font-chinese text-sm font-medium text-danger">
+						<AlertCircle class="h-5 w-5" />
+						{errorMessages[serverError]?.() ?? m.reg_err_unknown()}
+					</div>
+				</div>
+			{/if}
 
 			<!-- Category Card -->
 			<div class="mb-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
@@ -797,7 +890,7 @@
 				</div>
 				<div class="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
 					<div class="mb-1 font-chinese text-xs text-slate-400">{m.reg_fee_label()}</div>
-					<div class="font-heading text-2xl text-cta">$60</div>
+					<div class="font-heading text-2xl text-cta">${data.config.registration_fee * 2}</div>
 					<div class="font-chinese text-xs text-slate-400">{m.reg_fee_per_person()}</div>
 				</div>
 			</div>
@@ -836,19 +929,23 @@
 						{m.reg_prev()}
 					</button>
 					<button
-						type="button"
-						onclick={handleSubmit}
-						disabled={!allChecksPass}
+						type="submit"
+						disabled={!allChecksPass || submitting}
 						class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl px-8 py-4 font-chinese text-base font-bold text-white shadow-lg transition-all duration-200
-						{allChecksPass ? 'bg-cta hover:-translate-y-0.5 hover:bg-cta-hover hover:shadow-xl' : 'bg-slate-300 cursor-not-allowed shadow-none'}"
+						{allChecksPass && !submitting ? 'bg-cta hover:-translate-y-0.5 hover:bg-cta-hover hover:shadow-xl' : 'bg-slate-300 cursor-not-allowed shadow-none'}"
 					>
-						{m.reg_submit()}
-						<Check class="h-5 w-5" />
+						{#if submitting}
+							{m.reg_submitting()}
+						{:else}
+							{m.reg_submit()}
+							<Check class="h-5 w-5" />
+						{/if}
 					</button>
 				</div>
 			</div>
 			<!-- Spacer for fixed bottom bar on mobile -->
 			<div class="h-20 sm:hidden"></div>
+		</form>
 
 		<!-- ============================================ -->
 		<!-- STEP 3: SUCCESS                             -->
@@ -871,16 +968,21 @@
 				<div class="mb-8 rounded-2xl border border-primary/20 bg-white p-6 shadow-sm">
 					<div class="mb-1 font-chinese text-sm text-slate-500">{m.reg_confirm_number()}</div>
 					<div class="flex items-center justify-center gap-3">
-						<span class="font-heading text-4xl text-primary-darker sm:text-5xl">#2026-0012</span>
+						<span class="font-heading text-3xl text-primary-darker sm:text-4xl">{registrationResult?.teamId ? registrationResult.teamId.slice(0, 8).toUpperCase() : '---'}</span>
 						<button
 							type="button"
-							onclick={() => navigator.clipboard.writeText('2026-0012')}
+							onclick={() => navigator.clipboard.writeText(registrationResult?.teamId ?? '')}
 							class="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-600"
 							aria-label="Copy"
 						>
 							<Copy class="h-5 w-5" />
 						</button>
 					</div>
+					{#if registrationResult?.status === 'waitlist'}
+						<div class="mt-3 rounded-lg bg-amber-50 p-2 font-chinese text-xs font-medium text-amber-700">
+							{m.reg_waitlist_notice()}
+						</div>
+					{/if}
 				</div>
 
 				<!-- Registration Summary -->
@@ -906,33 +1008,88 @@
 					</div>
 				</div>
 
-				<!-- Payment Methods -->
+				<!-- E-Transfer Payment Instructions -->
 				<div class="mb-8 rounded-2xl border border-cta/20 bg-cta/5 p-6 text-left">
-					<div class="mb-4 flex items-center gap-2">
+					<div class="mb-5 flex items-center gap-2">
 						<DollarSign class="h-5 w-5 text-cta" />
-						<h3 class="font-chinese text-sm font-bold text-slate-700">{m.reg_payment_title()}</h3>
+						<h3 class="font-chinese text-sm font-bold text-slate-700">{m.pay_title()}</h3>
 					</div>
-					<div class="space-y-3">
-						<div class="flex items-start gap-3">
-							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-cta shadow-sm">1</div>
+
+					<p class="mb-4 font-chinese text-sm text-slate-600">{m.pay_instruction()}</p>
+
+					<!-- E-Transfer Details -->
+					<div class="mb-4 space-y-3 rounded-xl bg-white p-4">
+						<!-- Recipient -->
+						<div class="flex items-center justify-between">
 							<div>
-								<div class="font-chinese text-sm font-semibold text-slate-900">{m.reg_payment_etransfer()}</div>
-								<div class="font-chinese text-xs text-slate-500">{m.reg_payment_etransfer_desc()}</div>
+								<div class="font-chinese text-xs text-slate-400">{m.pay_recipient()}</div>
+								<div class="font-chinese text-sm font-semibold text-slate-900">{data.config.etransfer_email}</div>
 							</div>
+							<button
+								type="button"
+								onclick={() => { navigator.clipboard.writeText(data.config.etransfer_email); copiedField = 'etransfer'; setTimeout(() => copiedField = null, 2000); }}
+								class="cursor-pointer rounded-lg border border-slate-200 px-3 py-1.5 font-chinese text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+							>
+								{#if copiedField === 'etransfer'}
+									<Check class="inline h-3.5 w-3.5 text-primary" /> {m.pay_copied()}
+								{:else}
+									<Copy class="inline h-3.5 w-3.5" /> {m.pay_copy()}
+								{/if}
+							</button>
 						</div>
-						<div class="flex items-start gap-3">
-							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-cta shadow-sm">2</div>
-							<div>
-								<div class="font-chinese text-sm font-semibold text-slate-900">{m.reg_payment_cash()}</div>
-								<div class="font-chinese text-xs text-slate-500">{m.reg_payment_cash_desc()}</div>
-							</div>
+
+						<!-- Amount -->
+						<div>
+							<div class="font-chinese text-xs text-slate-400">{m.pay_amount()}</div>
+							<div class="font-heading text-2xl text-primary-darker">$60.00 CAD</div>
 						</div>
-						<div class="flex items-start gap-3">
-							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-cta shadow-sm">3</div>
+
+						<!-- Memo / Ref -->
+						<div class="flex items-center justify-between">
 							<div>
-								<div class="font-chinese text-sm font-semibold text-slate-900">{m.reg_payment_wechat()}</div>
-								<div class="font-chinese text-xs text-slate-500">{m.reg_payment_wechat_desc()}</div>
+								<div class="font-chinese text-xs text-slate-400">{m.pay_memo()}</div>
+								<div class="font-mono text-lg font-bold text-cta">{registrationResult?.teamId ? registrationResult.teamId.replace(/-/g, '').substring(0, 8).toUpperCase() : '---'}</div>
 							</div>
+							<button
+								type="button"
+								onclick={() => { navigator.clipboard.writeText(registrationResult?.teamId ? registrationResult.teamId.replace(/-/g, '').substring(0, 8).toUpperCase() : ''); copiedField = 'memo'; setTimeout(() => copiedField = null, 2000); }}
+								class="cursor-pointer rounded-lg border border-slate-200 px-3 py-1.5 font-chinese text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+							>
+								{#if copiedField === 'memo'}
+									<Check class="inline h-3.5 w-3.5 text-primary" /> {m.pay_copied()}
+								{:else}
+									<Copy class="inline h-3.5 w-3.5" /> {m.pay_copy()}
+								{/if}
+							</button>
+						</div>
+					</div>
+
+					<!-- Warnings -->
+					<div class="space-y-2 text-xs">
+						<div class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 font-chinese text-amber-800">
+							<AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+							<span>{m.pay_memo_warning({ ref: registrationResult?.teamId ? registrationResult.teamId.replace(/-/g, '').substring(0, 8).toUpperCase() : '---' })}</span>
+						</div>
+						<div class="flex items-start gap-2 font-chinese text-slate-500">
+							<CircleCheck class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+							<span>{m.pay_auto_deposit()}</span>
+						</div>
+						<div class="flex items-start gap-2 font-chinese text-slate-500">
+							<CircleCheck class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+							<span>{m.pay_arrival()}</span>
+						</div>
+						<div class="flex items-start gap-2 font-chinese text-slate-500">
+							<Clock class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+							<span>{m.pay_deadline({ hours: data.config.payment_deadline_hours })}</span>
+						</div>
+					</div>
+
+					<!-- Contact -->
+					<div class="mt-4 border-t border-cta/10 pt-4">
+						<div class="font-chinese text-xs font-medium text-slate-500">{m.pay_contact()}</div>
+						<div class="mt-1 flex flex-wrap gap-3 font-chinese text-xs text-slate-600">
+							<span class="flex items-center gap-1"><Phone class="h-3.5 w-3.5" /> {data.config.contact_phone}</span>
+							<span class="flex items-center gap-1"><MessageCircle class="h-3.5 w-3.5" /> {data.config.contact_wechat}</span>
 						</div>
 					</div>
 				</div>
