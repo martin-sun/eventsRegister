@@ -86,11 +86,13 @@
          │ 是
          ▼
 ┌─────────────────┐
-│  报名成功页面    │
-│  - 显示报名编号  │
-│  - 付款说明      │
-│  - 联系方式      │
-└─────────────────┘
+│  报名成功页面           │
+│  - 显示付款参考号       │
+│    (team ID 前8位大写)  │
+│  - E-Transfer 付款指引  │
+│    (收款邮箱/金额/备注) │
+│  - 组委会联系方式       │
+└─────────────────────────┘
 ```
 
 ## 核心业务逻辑（前端）
@@ -276,6 +278,9 @@ export interface TeamDetail {
   combined_age: number;
   status: string;
   payment_status: string;
+  payment_ref: string;            // 付款参考号（team ID 前8位大写）
+  paid_at: string | null;         // 付款确认时间
+  payment_notes: string | null;   // 付款备注
   category_en: string;
   category_zh: string;
   category_slug: string;
@@ -303,13 +308,13 @@ export interface CategoryStat {
 
 ## 付款流程
 
-本期**不集成在线支付**，采用线下付款方式：
+仅支持 **Interac e-Transfer** 付款，管理员手动确认到账。
 
-1. **e-Transfer** — 报名成功后页面显示收款邮箱
-2. **现金** — 联系组委会当面支付
-3. **微信转账** — 显示组委会微信二维码（华人社区常用）
+1. 报名成功后页面显示付款指引：收款邮箱、金额、付款参考号
+2. 用户通过银行 App 发送 e-Transfer，备注中填写付款参考号
+3. 管理员在后台根据参考号匹配队伍，标记 `unpaid → paid`
 
-管理员在后台手动标记付款状态 `unpaid → paid`。
+> 详细付款流程、页面设计及配置项见 [10-payment.md](./10-payment.md)
 
 ## 候补机制
 

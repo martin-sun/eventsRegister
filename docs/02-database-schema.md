@@ -110,6 +110,8 @@ CREATE TABLE teams (
   payment_status  payment_status_enum NOT NULL DEFAULT 'unpaid',
   seed            INTEGER,               -- 种子排名（可选）
   notes           TEXT,
+  paid_at         TIMESTAMPTZ,           -- 付款确认时间
+  payment_notes   TEXT,                  -- 付款备注（管理员填写）
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
   -- 两个选手不能相同
@@ -176,7 +178,11 @@ INSERT INTO tournament_config (key, value) VALUES
   ('min_age', '35'),
   ('registration_open', 'true'),
   ('registration_deadline', '"2026-05-17T23:59:59-06:00"'),
-  ('max_players', '128');
+  ('max_players', '128'),
+  ('etransfer_email', '"tournament@email.com"'),
+  ('contact_phone', '"(306) 555-1234"'),
+  ('contact_wechat', '"saskatoon_badminton"'),
+  ('payment_deadline_hours', '72');
 
 -- ============================================
 -- 6. 数据库函数：计算年龄（取整）
@@ -312,6 +318,9 @@ SELECT
   t.status,
   t.payment_status,
   t.seed,
+  t.paid_at,
+  t.payment_notes,
+  UPPER(LEFT(t.id::TEXT, 8)) AS payment_ref,  -- 付款参考号
   t.created_at,
   c.name_en AS category_en,
   c.name_zh AS category_zh,
@@ -361,6 +370,8 @@ GROUP BY c.id, c.name_en, c.name_zh, c.slug, c.max_teams, c.is_open;
 - `combined_age` 由 trigger 自动计算并校验
 - `status` 流转：`pending` → `confirmed` → `cancelled`
 - `payment_status`：`unpaid` → `paid` → `refunded`
+- `paid_at` / `payment_notes`：管理员确认付款时填写，用于审计追踪
+- 付款参考号：由视图从 `id` 前 8 位生成，用于 e-Transfer 备注对账
 
 ### 数据库级约束（Triggers）
 1. **年龄校验** — 每位选手≥35岁，且年龄之和满足组别要求
