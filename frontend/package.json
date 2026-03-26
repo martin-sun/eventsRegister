@@ -40,6 +40,7 @@
 	},
 	"dependencies": {
 		"@inlang/paraglide-js": "^2.15.0",
+		"@supabase/supabase-js": "^2.100.0",
 		"lucide-svelte": "^0.577.0"
 	}
 }
