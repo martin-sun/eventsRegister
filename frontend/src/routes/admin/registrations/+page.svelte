@@ -28,6 +28,7 @@
 	let paymentFilter = $state<'all' | 'unpaid' | 'paid'>('all');
 	let expandedTeamId = $state<string | null>(null);
 	let locale = $derived(getLocale());
+	let actionError = $state<string | null>(null);
 
 	// Payment modal state
 	let paymentModal = $state<{ open: boolean; team: AdminTeam | null; notes: string; loading: boolean }>({
@@ -92,6 +93,7 @@
 	async function confirmPayment() {
 		if (!paymentModal.team) return;
 		paymentModal.loading = true;
+		actionError = null;
 
 		const { error } = await supabase.rpc('admin_mark_payment', {
 			p_team_id: paymentModal.team.team_id,
@@ -99,7 +101,6 @@
 		});
 
 		if (!error) {
-			// Update local state
 			const idx = teams.findIndex((t) => t.team_id === paymentModal.team!.team_id);
 			if (idx !== -1) {
 				teams[idx] = {
@@ -112,10 +113,13 @@
 			closePaymentModal();
 		} else {
 			paymentModal.loading = false;
+			actionError = error.message;
 		}
 	}
 
 	async function updateTeamStatus(teamId: string, newStatus: string) {
+		actionError = null;
+
 		const { error } = await supabase.rpc('admin_update_team_status', {
 			p_team_id: teamId,
 			p_status: newStatus
@@ -126,6 +130,8 @@
 			if (idx !== -1) {
 				teams[idx] = { ...teams[idx], status: newStatus as AdminTeam['status'] };
 			}
+		} else {
+			actionError = error.message;
 		}
 	}
 
@@ -137,18 +143,24 @@
 
 	function exportCsv() {
 		const headers = [
-			'Ref', 'Player 1', 'Player 1 Email', 'Player 1 Phone',
-			'Player 2', 'Player 2 Email', 'Player 2 Phone',
+			'Ref', 'Player 1', 'P1 Gender', 'P1 Age', 'P1 Email', 'P1 Phone', 'P1 WeChat',
+			'Player 2', 'P2 Gender', 'P2 Age', 'P2 Email', 'P2 Phone', 'P2 WeChat',
 			'Category', 'Type', 'Combined Age', 'Status', 'Payment', 'Paid At', 'Registered'
 		];
 		const rows = filteredTeams.map((t) => [
 			formatPaymentRef(t.team_id),
 			t.player1_name_en,
+			t.player1_gender,
+			t.player1_age,
 			t.player1_email,
 			t.player1_phone || '',
+			t.player1_wechat || '',
 			t.player2_name_en,
+			t.player2_gender,
+			t.player2_age,
 			t.player2_email,
 			t.player2_phone || '',
+			t.player2_wechat || '',
 			t.category_en,
 			t.gender_type,
 			t.combined_age,
@@ -158,7 +170,7 @@
 			t.created_at
 		]);
 
-		const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
+		const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
 		const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -175,6 +187,15 @@
 
 <div class="space-y-6">
 	<!-- Header -->
+	{#if actionError}
+		<div class="rounded-xl bg-danger/5 px-4 py-3 font-chinese text-sm text-danger flex items-center justify-between">
+			<span>{actionError}</span>
+			<button type="button" onclick={() => actionError = null} class="cursor-pointer text-danger/60 hover:text-danger">
+				<X class="h-4 w-4" />
+			</button>
+		</div>
+	{/if}
+
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<h1 class="font-heading text-3xl tracking-wide text-primary-darker">{m.admin_reg_title()}</h1>
 		<button
@@ -248,6 +269,19 @@
 							</div>
 							<div class="font-chinese text-xs text-slate-400">
 								{locale === 'zh' ? team.category_zh : team.category_en} · {team.gender_type === 'mens' ? m.reg_mens() : team.gender_type === 'womens' ? m.reg_womens() : m.reg_mixed()} · {team.combined_age}{m.reg_age_suffix()}
+							</div>
+							<!-- Contact info -->
+							<div class="mt-1 hidden space-y-0.5 sm:block">
+								<div class="flex items-center gap-3 text-xs text-slate-500">
+									<span class="flex items-center gap-1"><Mail class="h-3 w-3 text-slate-300" />{team.player1_email}</span>
+									{#if team.player1_phone}<span class="flex items-center gap-1"><Phone class="h-3 w-3 text-slate-300" />{team.player1_phone}</span>{/if}
+									{#if team.player1_wechat}<span class="flex items-center gap-1"><MessageCircle class="h-3 w-3 text-slate-300" />{team.player1_wechat}</span>{/if}
+								</div>
+								<div class="flex items-center gap-3 text-xs text-slate-500">
+									<span class="flex items-center gap-1"><Mail class="h-3 w-3 text-slate-300" />{team.player2_email}</span>
+									{#if team.player2_phone}<span class="flex items-center gap-1"><Phone class="h-3 w-3 text-slate-300" />{team.player2_phone}</span>{/if}
+									{#if team.player2_wechat}<span class="flex items-center gap-1"><MessageCircle class="h-3 w-3 text-slate-300" />{team.player2_wechat}</span>{/if}
+								</div>
 							</div>
 						</div>
 
@@ -460,7 +494,7 @@
 				</div>
 				<div class="flex justify-between font-chinese text-sm">
 					<span class="text-slate-500">{m.admin_pay_modal_amount()}</span>
-					<span class="font-bold text-emerald-700">$60.00 CAD</span>
+					<span class="font-bold text-emerald-700">${data.config.registration_fee * 2}.00 CAD</span>
 				</div>
 			</div>
 

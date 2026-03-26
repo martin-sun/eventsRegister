@@ -55,6 +55,12 @@
 			return;
 		}
 
+		// Set auth cookie for server-side verification
+		const session = data.session;
+		if (session?.access_token) {
+			document.cookie = `admin-session=${session.access_token}; path=/admin; SameSite=Lax; max-age=3600`;
+		}
+
 		verifying = false;
 		goto('/admin');
 	}

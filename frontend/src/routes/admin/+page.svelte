@@ -19,10 +19,13 @@
 
 	let stats = $state<DashboardStats | null>(null);
 	let loading = $state(true);
+	let statsError = $state<string | null>(null);
 
 	onMount(async () => {
-		const { data: result } = await supabase.rpc('admin_dashboard_stats');
-		if (result) {
+		const { data: result, error } = await supabase.rpc('admin_dashboard_stats');
+		if (error) {
+			statsError = error.message;
+		} else if (result) {
 			stats = result as DashboardStats;
 		}
 		loading = false;
@@ -106,6 +109,10 @@
 				</div>
 				<div class="font-heading text-4xl text-slate-700">${stats.expected_revenue}</div>
 			</div>
+		</div>
+	{:else if statsError}
+		<div class="rounded-2xl border border-danger/20 bg-danger/5 p-5">
+			<p class="font-chinese text-sm text-danger">{statsError}</p>
 		</div>
 	{:else if loading}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">

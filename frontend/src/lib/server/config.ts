@@ -1,4 +1,4 @@
-import { supabase } from '$lib/supabase';
+import { supabaseAdmin } from '$lib/server/supabase';
 import type { TournamentConfig } from '$lib/types';
 
 const DEFAULTS: TournamentConfig = {
@@ -16,7 +16,7 @@ const DEFAULTS: TournamentConfig = {
 };
 
 export async function getTournamentConfig(): Promise<TournamentConfig> {
-	const { data, error } = await supabase.from('tournament_config').select('key, value');
+	const { data, error } = await supabaseAdmin.from('tournament_config').select('key, value');
 
 	if (error || !data) {
 		return DEFAULTS;

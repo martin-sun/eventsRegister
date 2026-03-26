@@ -112,6 +112,13 @@
 		return eligibleCategories[0];
 	});
 
+	// Minimum combined age across all open categories
+	let minRequiredAge = $derived.by(() => {
+		const openCats = data.categories.filter((c) => c.is_open);
+		if (openCats.length === 0) return 0;
+		return Math.min(...openCats.map((c) => c.min_age_sum));
+	});
+
 	let autoCategory = $derived.by(() => {
 		if (combinedAge === null) return null;
 		if (selectedCategory) return selectedCategory.slug;
@@ -120,7 +127,7 @@
 
 	let categoryName = $derived.by(() => {
 		if (selectedCategory) return getLocale() === 'zh' ? selectedCategory.name_zh : selectedCategory.name_en;
-		if (autoCategory === 'ineligible') return m.reg_ineligible();
+		if (autoCategory === 'ineligible') return m.reg_ineligible({ minAge: minRequiredAge });
 		return '';
 	});
 
@@ -188,6 +195,8 @@
 				errors.email = m.reg_err_email_required();
 			} else if (!isValidEmail(player2.email)) {
 				errors.email = m.reg_err_email_invalid();
+			} else if (sameEmail) {
+				errors.email = m.reg_err_same_player();
 			}
 		}
 		return errors;
@@ -215,6 +224,12 @@
 			selectedCategory !== null
 	);
 
+	let sameEmail = $derived(
+		player1.email.trim() !== '' &&
+		player2.email.trim() !== '' &&
+		player1.email.trim().toLowerCase() === player2.email.trim().toLowerCase()
+	);
+
 	let validationChecks = $derived.by(() => [
 		{
 			label: m.reg_check_age(),
@@ -226,7 +241,7 @@
 		},
 		{
 			label: m.reg_check_info(),
-			passed: isPlayerValid(player1, p1Age) && isPlayerValid(player2, p2Age)
+			passed: isPlayerValid(player1, p1Age) && isPlayerValid(player2, p2Age) && !sameEmail
 		},
 		{
 			label: m.reg_check_type(),
@@ -254,10 +269,10 @@
 	function handleEnhance() {
 		submitting = true;
 		serverError = null;
-		return async ({ result }: { result: any }) => {
+		return async ({ result }: { result: import('@sveltejs/kit').ActionResult }) => {
 			submitting = false;
 			if (result.type === 'success' && result.data?.success) {
-				registrationResult = result.data;
+				registrationResult = result.data as typeof registrationResult;
 				currentStep = 3;
 				window.scrollTo({ top: 0, behavior: 'smooth' });
 			} else if (result.type === 'failure') {
@@ -274,6 +289,7 @@
 		registration_closed: () => m.reg_err_registration_closed(),
 		rate_limited: () => m.reg_err_rate_limited(),
 		email_conflict: () => m.reg_err_email_conflict(),
+		same_player: () => m.reg_err_same_player(),
 		missing_player1_fields: () => m.reg_err_missing_fields(),
 		missing_player2_fields: () => m.reg_err_missing_fields(),
 		missing_category: () => m.reg_err_missing_fields(),
@@ -726,7 +742,7 @@
 						{:else if autoCategory === 'ineligible'}
 							<div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-danger/10 px-3 py-1 font-chinese text-xs font-bold text-danger">
 								<AlertCircle class="h-3 w-3" />
-								{m.reg_ineligible()}
+								{m.reg_ineligible({ minAge: minRequiredAge })}
 							</div>
 						{/if}
 					</div>
@@ -968,7 +984,7 @@
 				<div class="mb-8 rounded-2xl border border-primary/20 bg-white p-6 shadow-sm">
 					<div class="mb-1 font-chinese text-sm text-slate-500">{m.reg_confirm_number()}</div>
 					<div class="flex items-center justify-center gap-3">
-						<span class="font-heading text-3xl text-primary-darker sm:text-4xl">{registrationResult?.teamId ? registrationResult.teamId.slice(0, 8).toUpperCase() : '---'}</span>
+						<span class="font-heading text-3xl text-primary-darker sm:text-4xl">{registrationResult?.teamId ? registrationResult.teamId.replace(/-/g, '').substring(0, 8).toUpperCase() : '---'}</span>
 						<button
 							type="button"
 							onclick={() => navigator.clipboard.writeText(registrationResult?.teamId ?? '')}
@@ -1041,7 +1057,7 @@
 						<!-- Amount -->
 						<div>
 							<div class="font-chinese text-xs text-slate-400">{m.pay_amount()}</div>
-							<div class="font-heading text-2xl text-primary-darker">$60.00 CAD</div>
+							<div class="font-heading text-2xl text-primary-darker">${data.config.registration_fee * 2}.00 CAD</div>
 						</div>
 
 						<!-- Memo / Ref -->

@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { supabase } from '$lib/supabase';
+import { supabaseAdmin } from '$lib/server/supabase';
 import { getTournamentConfig } from '$lib/server/config';
 import { parseRegistrationError } from '$lib/server/registration';
 import { fail } from '@sveltejs/kit';
@@ -7,7 +7,7 @@ import type { Category } from '$lib/types';
 
 export const load: PageServerLoad = async () => {
 	const [categoryResult, config] = await Promise.all([
-		supabase
+		supabaseAdmin
 			.from('categories')
 			.select('id, name_en, name_zh, slug, min_age_sum, max_teams, is_open, sort_order')
 			.order('sort_order'),
@@ -53,7 +53,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'missing_category', success: false });
 		}
 
-		const { data, error } = await supabase.rpc('register_team', {
+		const { data, error } = await supabaseAdmin.rpc('register_team', {
 			p1_name_en: `${p1FirstName} ${p1LastName}`,
 			p1_email: p1Email,
 			p1_gender: p1Gender,
@@ -70,6 +70,7 @@ export const actions: Actions = {
 		});
 
 		if (error) {
+			console.error('[register_team] RPC error:', error.message, error);
 			return fail(400, {
 				error: parseRegistrationError(error.message),
 				success: false

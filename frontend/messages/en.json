@@ -153,7 +153,7 @@
 
   "reg_combined_age": "Combined Age",
   "reg_match_type": "Match Type",
-  "reg_ineligible": "Ineligible (combined age must be ≥ 80)",
+  "reg_ineligible": "Ineligible (combined age must be ≥ {minAge})",
   "reg_mens": "Men's Doubles",
   "reg_womens": "Women's Doubles",
   "reg_mixed": "Mixed Doubles",
@@ -228,6 +228,7 @@
   "reg_err_registration_closed": "Registration is closed",
   "reg_err_rate_limited": "Too many attempts, please try again later",
   "reg_err_email_conflict": "This email is already in use, please check the email address",
+  "reg_err_same_player": "Both players cannot use the same email address",
   "reg_err_missing_fields": "Please fill in all required fields",
   "reg_err_unknown": "Submission failed, please try again later",
   "reg_waitlist_notice": "This category is full. You have been added to the waitlist. We will notify you if a spot opens up.",

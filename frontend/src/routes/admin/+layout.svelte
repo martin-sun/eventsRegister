@@ -16,12 +16,14 @@
 	import { goto } from '$app/navigation';
 	import { supabaseAuth } from '$lib/supabase-auth';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import { onMount } from 'svelte';
 
-	let { children } = $props();
+	let { children, data } = $props();
 
-	let checking = $state(true);
-	let user = $state<{ email?: string } | null>(null);
 	let sidebarOpen = $state(false);
+
+	// Use server-verified user data (from +layout.server.ts)
+	let user = $derived(data.user);
 
 	// Check if we're on the login page
 	let isLoginPage = $derived(page.url.pathname === '/admin/login');
@@ -30,32 +32,22 @@
 		document.documentElement.lang = getLocale();
 	});
 
-	// Auth check on mount
-	$effect(() => {
-		if (isLoginPage) {
-			checking = false;
-			return;
-		}
-
-		supabaseAuth.auth.getSession().then(({ data }) => {
-			const session = data.session;
-			if (!session) {
-				goto('/admin/login');
-				return;
+	// Sync auth cookie on token refresh so server stays authenticated
+	onMount(() => {
+		const {
+			data: { subscription }
+		} = supabaseAuth.auth.onAuthStateChange((_event, session) => {
+			if (session?.access_token) {
+				document.cookie = `admin-session=${session.access_token}; path=/admin; SameSite=Lax; max-age=3600`;
 			}
-			const role = session.user?.app_metadata?.role;
-			if (role !== 'admin') {
-				supabaseAuth.auth.signOut();
-				goto('/admin/login');
-				return;
-			}
-			user = { email: session.user.email };
-			checking = false;
 		});
+		return () => subscription.unsubscribe();
 	});
 
 	async function handleLogout() {
 		await supabaseAuth.auth.signOut();
+		// Clear auth cookie
+		document.cookie = 'admin-session=; path=/admin; max-age=0';
 		goto('/admin/login');
 	}
 
@@ -72,7 +64,7 @@
 
 {#if isLoginPage}
 	{@render children()}
-{:else if checking}
+{:else if !user}
 	<div class="flex min-h-screen items-center justify-center bg-slate-50">
 		<Loader2 class="h-8 w-8 animate-spin text-primary" />
 	</div>
@@ -89,7 +81,7 @@
 					<div class="font-chinese text-sm font-bold text-primary-darker leading-tight">
 						{m.admin_nav_dashboard()}
 					</div>
-					<div class="font-chinese text-xs text-slate-500 leading-tight">{user?.email ?? ''}</div>
+					<div class="font-chinese text-xs text-slate-500 leading-tight">{user.email}</div>
 				</div>
 			</div>
 

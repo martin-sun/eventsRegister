@@ -153,7 +153,7 @@
 
   "reg_combined_age": "组合年龄",
   "reg_match_type": "比赛类型",
-  "reg_ineligible": "不符合参赛条件（需 ≥ 80岁）",
+  "reg_ineligible": "不符合参赛条件（需 ≥ {minAge}岁）",
   "reg_mens": "男双",
   "reg_womens": "女双",
   "reg_mixed": "混双",
@@ -228,6 +228,7 @@
   "reg_err_registration_closed": "报名已截止",
   "reg_err_rate_limited": "操作过于频繁，请稍后再试",
   "reg_err_email_conflict": "该邮箱已被使用，请检查邮箱地址",
+  "reg_err_same_player": "两位选手不能使用相同的邮箱地址",
   "reg_err_missing_fields": "请填写所有必填项",
   "reg_err_unknown": "提交失败，请稍后重试",
   "reg_waitlist_notice": "当前组别名额已满，您已进入候补名单。如有退出，我们将及时通知您。",

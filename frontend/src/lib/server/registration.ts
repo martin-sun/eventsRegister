@@ -8,6 +8,7 @@ export function parseRegistrationError(message: string): string {
 	if (message.includes('already registered')) return 'player_already_registered';
 	if (message.includes('Registration is closed')) return 'registration_closed';
 	if (message.includes('Please wait')) return 'rate_limited';
+	if (message.includes('team_different_players')) return 'same_player';
 	if (message.includes('duplicate key') || message.includes('email')) return 'email_conflict';
 	return 'unknown_error';
 }

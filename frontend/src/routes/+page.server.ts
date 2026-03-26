@@ -1,12 +1,12 @@
 import type { PageServerLoad } from './$types';
-import { supabase } from '$lib/supabase';
+import { supabaseAdmin } from '$lib/server/supabase';
 import { getTournamentConfig } from '$lib/server/config';
 import type { CategoryStat, Sponsor } from '$lib/types';
 
 export const load: PageServerLoad = async () => {
 	const [categoryResult, sponsorResult, config] = await Promise.all([
-		supabase.from('category_stats').select('*'),
-		supabase
+		supabaseAdmin.from('category_stats').select('*'),
+		supabaseAdmin
 			.from('sponsors')
 			.select(
 				'id, name_zh, name_en, level, logo_url, website, description_zh, description_en, sort_order'
