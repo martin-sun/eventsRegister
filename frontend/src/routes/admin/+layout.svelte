@@ -4,6 +4,7 @@
 		LayoutDashboard,
 		ClipboardList,
 		Handshake,
+		Settings,
 		LogOut,
 		ExternalLink,
 		Menu,
@@ -53,7 +54,9 @@
 
 	const navItems = $derived([
 		{ label: m.admin_nav_dashboard(), href: '/admin', icon: LayoutDashboard },
-		{ label: m.admin_nav_registrations(), href: '/admin/registrations', icon: ClipboardList }
+		{ label: m.admin_nav_registrations(), href: '/admin/registrations', icon: ClipboardList },
+		{ label: m.admin_nav_sponsors(), href: '/admin/sponsors', icon: Handshake },
+		{ label: m.admin_nav_settings(), href: '/admin/settings', icon: Settings }
 	]);
 
 	function isActive(href: string): boolean {

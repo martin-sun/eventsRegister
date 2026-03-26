@@ -300,7 +300,7 @@
 			<!-- Image half -->
 			<div class="relative h-64 lg:h-auto">
 				<img
-					src="/images/venue.png"
+					src="/images/venue.avif"
 					alt="Riverside Badminton & Tennis Club"
 					class="absolute inset-0 h-full w-full object-cover"
 				/>
