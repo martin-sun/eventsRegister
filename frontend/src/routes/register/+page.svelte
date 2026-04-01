@@ -36,6 +36,8 @@
 	let serverError = $state<string | null>(null);
 	let registrationResult = $state<{ teamId: string; status: string; genderType: string; combinedAge: number } | null>(null);
 	let copiedField = $state<string | null>(null);
+	let waiverAccepted = $state(false);
+	let mediaReleaseAccepted = $state(false);
 
 	let player1 = $state({
 		firstName: '',
@@ -232,8 +234,8 @@
 
 	let validationChecks = $derived.by(() => [
 		{
-			label: m.reg_check_age(),
-			passed: p1Age !== null && p1Age >= 35 && p2Age !== null && p2Age >= 35
+			label: m.reg_check_age({ minAge: String(MIN_INDIVIDUAL_AGE) }),
+			passed: p1Age !== null && p1Age >= MIN_INDIVIDUAL_AGE && p2Age !== null && p2Age >= MIN_INDIVIDUAL_AGE
 		},
 		{
 			label: m.reg_check_combined(),
@@ -249,7 +251,7 @@
 		}
 	]);
 
-	let allChecksPass = $derived(validationChecks.every((c) => c.passed));
+	let allChecksPass = $derived(validationChecks.every((c) => c.passed) && waiverAccepted && mediaReleaseAccepted);
 
 	// --- Actions ---
 	function touchAllFields() {
@@ -801,6 +803,7 @@
 			<input type="hidden" name="p2_phone" value={player2.phone} />
 			<input type="hidden" name="p2_wechat" value={player2.wechat} />
 			<input type="hidden" name="category_id" value={selectedCategory?.id ?? ''} />
+			<input type="hidden" name="locale" value={getLocale()} />
 
 			<!-- Server Error -->
 			{#if serverError}
@@ -907,7 +910,7 @@
 				<div class="rounded-2xl border border-slate-100 bg-white p-4 text-center shadow-sm">
 					<div class="mb-1 font-chinese text-xs text-slate-400">{m.reg_fee_label()}</div>
 					<div class="font-heading text-2xl text-cta">${data.config.registration_fee * 2}</div>
-					<div class="font-chinese text-xs text-slate-400">{m.reg_fee_per_person()}</div>
+					<div class="font-chinese text-xs text-slate-400">{m.reg_fee_per_person({ fee: String(data.config.registration_fee) })}</div>
 				</div>
 			</div>
 
@@ -930,6 +933,51 @@
 							</span>
 						</div>
 					{/each}
+				</div>
+			</div>
+
+			<!-- Agreements -->
+			<div class="mb-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+				<div class="space-y-4">
+					<!-- Waiver of Liability -->
+					<label class="flex items-start gap-3 cursor-pointer group">
+						<input
+							type="checkbox"
+							bind:checked={waiverAccepted}
+							class="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-slate-300 text-primary accent-primary"
+						/>
+						<span class="font-chinese text-sm text-slate-700">
+							{m.reg_waiver_label()}
+							<a
+								href="/waiver"
+								target="_blank"
+								class="font-semibold text-primary underline decoration-primary/30 underline-offset-2 transition-colors hover:text-primary-dark hover:decoration-primary"
+								onclick={(e) => e.stopPropagation()}
+							>
+								{m.reg_waiver_link()}
+							</a>
+						</span>
+					</label>
+
+					<!-- Media Release Consent -->
+					<label class="flex items-start gap-3 cursor-pointer group">
+						<input
+							type="checkbox"
+							bind:checked={mediaReleaseAccepted}
+							class="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-slate-300 text-primary accent-primary"
+						/>
+						<span class="font-chinese text-sm text-slate-700">
+							{m.reg_media_release_label()}
+							<a
+								href="/media-release"
+								target="_blank"
+								class="font-semibold text-primary underline decoration-primary/30 underline-offset-2 transition-colors hover:text-primary-dark hover:decoration-primary"
+								onclick={(e) => e.stopPropagation()}
+							>
+								{m.reg_media_release_link()}
+							</a>
+						</span>
+					</label>
 				</div>
 			</div>
 

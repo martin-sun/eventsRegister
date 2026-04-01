@@ -50,7 +50,9 @@ export interface Category {
 
 export interface TournamentConfig {
 	tournament_date: string;
+	event_name: { en: string; zh: string };
 	venue: { en: string; zh: string };
+	venue_address: string;
 	registration_fee: number;
 	min_age: number;
 	registration_open: boolean;

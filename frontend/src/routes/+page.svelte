@@ -17,8 +17,46 @@
 
 	let { data } = $props();
 
-	// --- Countdown Timer ---
+	let venueName = $derived(getLocale() === 'zh' ? data.config.venue.zh : data.config.venue.en);
+
+	// --- Date/time formatting from config ---
 	let eventDate = $derived(new Date(data.config.tournament_date));
+
+	let formattedDateBadge = $derived(() => {
+		const locale = getLocale();
+		if (locale === 'zh') {
+			return eventDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+		}
+		const dateStr = eventDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+		const dayStr = eventDate.toLocaleDateString('en-US', { weekday: 'long' });
+		return `${dateStr} (${dayStr})`;
+	});
+
+	let formattedDate = $derived(() => {
+		const locale = getLocale();
+		if (locale === 'zh') {
+			return eventDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+		}
+		return eventDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+	});
+
+	let formattedDayOfWeek = $derived(() => {
+		const locale = getLocale();
+		if (locale === 'zh') {
+			return eventDate.toLocaleDateString('zh-CN', { weekday: 'short' });
+		}
+		return eventDate.toLocaleDateString('en-US', { weekday: 'long' });
+	});
+
+	let formattedTime = $derived(() => {
+		const locale = getLocale();
+		if (locale === 'zh') {
+			return eventDate.toLocaleTimeString('zh-CN', { hour: 'numeric', minute: '2-digit', hour12: true });
+		}
+		return eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+	});
+
+	// --- Countdown Timer ---
 
 	let now = $state(new Date());
 	let countdown = $derived(getCountdown(now));
@@ -132,7 +170,7 @@
 			<!-- Badge -->
 			<div class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-md shadow-lg">
 				<CalendarDays class="h-4 w-4 text-cta" />
-				<span class="font-chinese tracking-wide">{m.hero_date_badge()}</span>
+				<span class="font-chinese tracking-wide">{m.hero_date_badge({ date: formattedDateBadge() })}</span>
 			</div>
 
 			<!-- Exaggerated Minimalism Title -->
@@ -147,12 +185,12 @@
 			<div class="mb-10 flex flex-wrap items-center justify-center gap-4 font-chinese text-base font-medium text-white/90 sm:text-lg">
 				<span class="flex items-center gap-1.5">
 					<MapPin class="h-5 w-5 text-sky-400" />
-					Riverside Badminton & Tennis Club
+					{venueName}
 				</span>
 				<span class="hidden sm:inline text-white/40">·</span>
 				<span class="flex items-center gap-1.5">
 					<Users class="h-5 w-5 text-sky-400" />
-					{m.hero_fee()}
+					{m.hero_fee({ fee: String(data.config.registration_fee) })}
 				</span>
 			</div>
 
@@ -301,7 +339,7 @@
 			<div class="relative h-64 lg:h-auto">
 				<img
 					src="/images/venue.avif"
-					alt="Riverside Badminton & Tennis Club"
+					alt={venueName}
 					class="absolute inset-0 h-full w-full object-cover"
 				/>
 				<div class="absolute inset-0 bg-primary-darker/60 mix-blend-multiply lg:hidden"></div>
@@ -318,7 +356,7 @@
 						</div>
 						<div>
 							<div class="mb-1 font-chinese text-sm font-medium tracking-wide text-white/60">{m.venue_date_label()}</div>
-							<div class="font-chinese text-xl font-bold text-white">{m.venue_date_value()} <span class="text-white/80 font-normal ml-1">{m.venue_date_day()}</span></div>
+							<div class="font-chinese text-xl font-bold text-white">{m.venue_date_value({ date: formattedDate() })} <span class="text-white/80 font-normal ml-1">{m.venue_date_day({ dayOfWeek: formattedDayOfWeek() })}</span></div>
 						</div>
 					</div>
 
@@ -328,7 +366,7 @@
 						</div>
 						<div>
 							<div class="mb-1 font-chinese text-sm font-medium tracking-wide text-white/60">{m.venue_time_label()}</div>
-							<div class="font-chinese text-xl font-bold text-white">{m.venue_time_value()} <span class="text-white/80 font-normal ml-1">{m.venue_time_note()}</span></div>
+							<div class="font-chinese text-xl font-bold text-white">{m.venue_time_value({ time: formattedTime() })} <span class="text-white/80 font-normal ml-1">{m.venue_time_note()}</span></div>
 						</div>
 					</div>
 
@@ -338,7 +376,7 @@
 						</div>
 						<div>
 							<div class="mb-1 font-chinese text-sm font-medium tracking-wide text-white/60">{m.venue_location_label()}</div>
-							<div class="font-chinese text-xl font-bold text-white leading-tight">Riverside Badminton <br/>& Tennis Club</div>
+							<div class="font-chinese text-xl font-bold text-white leading-tight">{venueName}</div>
 							<a href="/map" class="mt-2 inline-flex border-b border-cta/30 pb-0.5 font-chinese text-sm font-medium text-cta transition-colors hover:border-cta hover:text-cta-hover">
 								{m.venue_map_link()}
 							</a>

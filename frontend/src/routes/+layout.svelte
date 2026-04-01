@@ -6,7 +6,7 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime.js';
 
-	let { children } = $props();
+	let { children, data } = $props();
 
 	$effect(() => {
 		document.documentElement.lang = getLocale();
@@ -23,5 +23,5 @@
 	<main class="flex-1 pt-16">
 		{@render children()}
 	</main>
-	<Footer />
+	<Footer config={data.config} sponsors={data.sponsors} />
 </div>

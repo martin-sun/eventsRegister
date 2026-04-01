@@ -2,26 +2,24 @@ import type { PageServerLoad, Actions } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { getTournamentConfig } from '$lib/server/config';
 import { parseRegistrationError } from '$lib/server/registration';
+import { sendRegistrationEmail } from '$lib/server/email';
 import { fail } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import type { Category } from '$lib/types';
 
 export const load: PageServerLoad = async () => {
-	const [categoryResult, config] = await Promise.all([
-		supabaseAdmin
-			.from('categories')
-			.select('id, name_en, name_zh, slug, min_age_sum, max_teams, is_open, sort_order')
-			.order('sort_order'),
-		getTournamentConfig()
-	]);
+	const categoryResult = await supabaseAdmin
+		.from('categories')
+		.select('id, name_en, name_zh, slug, min_age_sum, max_teams, is_open, sort_order')
+		.order('sort_order');
 
 	return {
-		categories: (categoryResult.data ?? []) as Category[],
-		config
+		categories: (categoryResult.data ?? []) as Category[]
 	};
 };
 
 export const actions: Actions = {
-	register: async ({ request }) => {
+	register: async ({ request, url }) => {
 		const formData = await request.formData();
 
 		const p1FirstName = (formData.get('p1_firstName') as string)?.trim();
@@ -41,6 +39,7 @@ export const actions: Actions = {
 		const p2Wechat = (formData.get('p2_wechat') as string)?.trim() || null;
 
 		const categoryId = formData.get('category_id') as string;
+		const locale = (formData.get('locale') as string) || 'en';
 
 		// Server-side validation
 		if (!p1FirstName || !p1LastName || !p1Gender || !p1Dob || !p1Email) {
@@ -74,6 +73,41 @@ export const actions: Actions = {
 			return fail(400, {
 				error: parseRegistrationError(error.message),
 				success: false
+			});
+		}
+
+		// Resolve category name for the email
+		const categoryResult = await supabaseAdmin
+			.from('categories')
+			.select('name_en, name_zh')
+			.eq('id', categoryId)
+			.single();
+		const catName = categoryResult.data
+			? locale === 'zh'
+				? categoryResult.data.name_zh
+				: categoryResult.data.name_en
+			: categoryId;
+
+		// Send confirmation email (non-blocking — failure won't break registration)
+		const config = await getTournamentConfig();
+		const resendFrom = env.RESEND_FROM || 'tournament@resend.dev';
+		if (env.RESEND_API_KEY) {
+			sendRegistrationEmail(env.RESEND_API_KEY, resendFrom, {
+				to: p1Email,
+				player1Name: `${p1FirstName} ${p1LastName}`,
+				player2Name: `${p2FirstName} ${p2LastName}`,
+				player1Email: p1Email,
+				player2Email: p2Email,
+				categoryName: catName,
+				genderType: data.gender_type,
+				combinedAge: data.combined_age,
+				teamId: data.team_id,
+				status: data.status,
+				config,
+				locale,
+				siteUrl: url.origin
+			}).catch((err) => {
+				console.error('[email] Failed to send registration email:', err);
 			});
 		}
 

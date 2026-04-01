@@ -3,7 +3,12 @@ import type { TournamentConfig } from '$lib/types';
 
 const DEFAULTS: TournamentConfig = {
 	tournament_date: '2026-05-24T09:30:00-06:00',
+	event_name: {
+		en: 'The 2nd "L&T Realty Cup" Saskatoon Masters Badminton Championships',
+		zh: '第二届「林与唐地产杯」萨斯卡通中老年羽毛球锦标赛'
+	},
 	venue: { en: 'Riverside Badminton & Tennis Club', zh: 'Riverside 羽毛球网球俱乐部' },
+	venue_address: '645 Spadina Crescent W, Saskatoon, SK S7M 1C1',
 	registration_fee: 30,
 	min_age: 35,
 	registration_open: true,
@@ -29,7 +34,9 @@ export async function getTournamentConfig(): Promise<TournamentConfig> {
 
 	return {
 		tournament_date: parseString(configMap.tournament_date, DEFAULTS.tournament_date),
+		event_name: parseObject(configMap.event_name, DEFAULTS.event_name),
 		venue: parseObject(configMap.venue, DEFAULTS.venue),
+		venue_address: parseString(configMap.venue_address, DEFAULTS.venue_address),
 		registration_fee: parseNumber(configMap.registration_fee, DEFAULTS.registration_fee),
 		min_age: parseNumber(configMap.min_age, DEFAULTS.min_age),
 		registration_open: parseBoolean(configMap.registration_open, DEFAULTS.registration_open),
