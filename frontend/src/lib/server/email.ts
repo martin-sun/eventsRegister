@@ -89,7 +89,23 @@ export async function sendRegistrationEmail(
 	if (!response.ok) {
 		const errorBody = await response.text();
 		console.error('[email] Resend API error:', response.status, errorBody);
-		// Don't throw — email failure should not block registration
+		throw new Error(`Resend API error: ${response.status} ${errorBody}`);
+	}
+}
+
+/**
+ * Safe wrapper for registration flow — email failure will not block registration.
+ * Logs errors but never throws.
+ */
+export async function sendRegistrationEmailSafe(
+	apiKey: string,
+	fromEmail: string,
+	data: RegistrationEmailData
+): Promise<void> {
+	try {
+		await sendRegistrationEmail(apiKey, fromEmail, data);
+	} catch (err) {
+		console.error('[email] Failed to send registration email (non-blocking):', err);
 	}
 }
 

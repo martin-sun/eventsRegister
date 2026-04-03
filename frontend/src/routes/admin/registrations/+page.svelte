@@ -13,7 +13,10 @@
 		Phone,
 		MessageCircle,
 		Copy,
-		Check
+		Check,
+		Trash2,
+		RotateCcw,
+		Send
 	} from 'lucide-svelte';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime.js';
@@ -29,6 +32,7 @@
 	let expandedTeamId = $state<string | null>(null);
 	let locale = $derived(getLocale());
 	let actionError = $state<string | null>(null);
+	let resendingTeamId = $state<string | null>(null);
 
 	// Payment modal state
 	let paymentModal = $state<{ open: boolean; team: AdminTeam | null; notes: string; loading: boolean }>({
@@ -132,6 +136,53 @@
 			}
 		} else {
 			actionError = error.message;
+		}
+	}
+
+	async function deleteTeam(team: AdminTeam) {
+		const names = `${team.player1_name_en} & ${team.player2_name_en}`;
+		if (!confirm(m.admin_reg_delete_confirm({ name: names }))) return;
+
+		actionError = null;
+		const { error } = await supabase.rpc('admin_delete_team', {
+			p_team_id: team.team_id
+		});
+
+		if (!error) {
+			teams = teams.filter((t) => t.team_id !== team.team_id);
+		} else {
+			actionError = error.message;
+		}
+	}
+
+	async function resendEmail(team: AdminTeam) {
+		actionError = null;
+		resendingTeamId = team.team_id;
+
+		try {
+			const formData = new FormData();
+			formData.append('team_id', team.team_id);
+			formData.append('locale', locale);
+
+			const response = await fetch('?/resend_email', {
+				method: 'POST',
+				body: formData
+			});
+
+			const result = await response.json();
+
+			if (result.type === 'success') {
+				const idx = teams.findIndex((t) => t.team_id === team.team_id);
+				if (idx !== -1) {
+					teams[idx] = { ...teams[idx], confirmation_email_sent_at: new Date().toISOString() };
+				}
+			} else if (result.type === 'failure') {
+				actionError = result.data?.error || 'Failed to send email';
+			}
+		} catch (err) {
+			actionError = 'Failed to send email';
+		} finally {
+			resendingTeamId = null;
 		}
 	}
 
@@ -285,6 +336,17 @@
 							</div>
 						</div>
 
+						<!-- Email status badge -->
+						<span class="hidden shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold sm:inline-flex
+							{team.confirmation_email_sent_at ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}">
+							{#if team.confirmation_email_sent_at}
+								<Mail class="mr-1 h-3 w-3" />
+								{m.admin_email_sent()}
+							{:else}
+								{m.admin_email_not_sent()}
+							{/if}
+						</span>
+
 						<!-- Status badge -->
 						<span class="hidden shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold sm:inline-flex
 							{team.status === 'confirmed' ? 'bg-primary/10 text-primary' : team.status === 'pending' ? 'bg-amber-50 text-amber-700' : team.status === 'waitlist' ? 'bg-slate-100 text-slate-600' : 'bg-danger/10 text-danger'}">
@@ -398,6 +460,14 @@
 								</div>
 							</div>
 
+							<!-- Email info -->
+							{#if team.confirmation_email_sent_at}
+								<div class="mt-4 rounded-xl bg-blue-50 p-3 font-chinese text-xs text-blue-700">
+									<Mail class="mr-1 inline h-3 w-3" />
+									{m.admin_email_sent()} · {formatDate(team.confirmation_email_sent_at)}
+								</div>
+							{/if}
+
 							<!-- Payment info -->
 							{#if team.paid_at}
 								<div class="mt-4 rounded-xl bg-emerald-50 p-3 font-chinese text-xs text-emerald-700">
@@ -438,6 +508,34 @@
 									>
 										<XCircle class="h-3.5 w-3.5" />
 										{m.admin_reg_cancel()}
+									</button>
+									<button
+										type="button"
+										onclick={() => resendEmail(team)}
+										disabled={resendingTeamId === team.team_id}
+										class="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 font-chinese text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 disabled:opacity-50"
+									>
+										<Send class="h-3.5 w-3.5" />
+										{resendingTeamId === team.team_id ? '...' : m.admin_reg_resend_email()}
+									</button>
+								</div>
+							{:else}
+								<div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+									<button
+										type="button"
+										onclick={() => updateTeamStatus(team.team_id, 'pending')}
+										class="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 font-chinese text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+									>
+										<RotateCcw class="h-3.5 w-3.5" />
+										{m.admin_reg_reactivate()}
+									</button>
+									<button
+										type="button"
+										onclick={() => deleteTeam(team)}
+										class="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-danger/10 px-3 py-1.5 font-chinese text-xs font-semibold text-danger transition-colors hover:bg-danger/20"
+									>
+										<Trash2 class="h-3.5 w-3.5" />
+										{m.admin_reg_delete()}
 									</button>
 								</div>
 							{/if}

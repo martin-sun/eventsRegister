@@ -338,6 +338,13 @@
   "admin_reg_empty": "暂无报名记录",
   "admin_reg_contact": "联系方式",
 
+  "admin_email_sent": "已发送",
+  "admin_email_not_sent": "未发送",
+  "admin_reg_resend_email": "重发确认邮件",
+  "admin_reg_delete": "删除",
+  "admin_reg_delete_confirm": "确定要删除 {name} 的报名吗？此操作不可撤销。",
+  "admin_reg_reactivate": "恢复报名",
+
   "admin_pay_modal_title": "确认付款",
   "admin_pay_modal_team": "队伍",
   "admin_pay_modal_ref": "参考号",

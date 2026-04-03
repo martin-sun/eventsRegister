@@ -338,6 +338,13 @@
   "admin_reg_empty": "No registrations found",
   "admin_reg_contact": "Contact",
 
+  "admin_email_sent": "Email Sent",
+  "admin_email_not_sent": "Email Not Sent",
+  "admin_reg_resend_email": "Resend Email",
+  "admin_reg_delete": "Delete",
+  "admin_reg_delete_confirm": "Are you sure you want to delete {name}'s registration? This cannot be undone.",
+  "admin_reg_reactivate": "Reactivate",
+
   "admin_pay_modal_title": "Confirm Payment",
   "admin_pay_modal_team": "Team",
   "admin_pay_modal_ref": "Reference",

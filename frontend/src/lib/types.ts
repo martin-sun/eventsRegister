@@ -75,6 +75,7 @@ export interface AdminTeam {
 	paid_at: string | null;
 	payment_notes: string | null;
 	payment_ref: string;
+	confirmation_email_sent_at: string | null;
 	seed: number | null;
 	created_at: string;
 	category_en: string;

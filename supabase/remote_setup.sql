@@ -72,6 +72,7 @@ CREATE TABLE events_register.teams (
   payment_status  events_register.payment_status_enum NOT NULL DEFAULT 'unpaid',
   paid_at         TIMESTAMPTZ,
   payment_notes   TEXT,
+  confirmation_email_sent_at TIMESTAMPTZ,
   seed            INTEGER,
   notes           TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -462,6 +463,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 5.11b 管理员永久删除队伍及其孤立选手
+CREATE OR REPLACE FUNCTION events_register.admin_delete_team(
+  p_team_id UUID
+)
+RETURNS VOID AS $$
+DECLARE
+  v_player1_id UUID;
+  v_player2_id UUID;
+BEGIN
+  IF NOT events_register.is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized: admin role required';
+  END IF;
+
+  SELECT player1_id, player2_id INTO v_player1_id, v_player2_id
+  FROM events_register.teams
+  WHERE id = p_team_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Team not found: %', p_team_id;
+  END IF;
+
+  DELETE FROM events_register.teams WHERE id = p_team_id;
+
+  DELETE FROM events_register.players p
+  WHERE p.id IN (v_player1_id, v_player2_id)
+    AND NOT EXISTS (
+      SELECT 1 FROM events_register.teams t
+      WHERE t.player1_id = p.id OR t.player2_id = p.id
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- 5.12 管理员仪表盘统计（从 tournament_config 读取报名费）
 CREATE OR REPLACE FUNCTION events_register.admin_dashboard_stats()
 RETURNS JSON AS $$
@@ -670,7 +703,8 @@ SELECT
   p2.email AS player2_email,
   p2.phone AS player2_phone,
   p2.wechat_id AS player2_wechat,
-  events_register.calculate_age_on_date(p2.date_of_birth) AS player2_age
+  events_register.calculate_age_on_date(p2.date_of_birth) AS player2_age,
+  t.confirmation_email_sent_at
 FROM events_register.teams t
 JOIN events_register.categories c ON t.category_id = c.id
 JOIN events_register.players p1 ON t.player1_id = p1.id

@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { supabaseAdmin } from '$lib/server/supabase';
 import { getTournamentConfig } from '$lib/server/config';
 import { parseRegistrationError } from '$lib/server/registration';
-import { sendRegistrationEmail } from '$lib/server/email';
+import { sendRegistrationEmailSafe } from '$lib/server/email';
 import { fail } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import type { Category } from '$lib/types';
@@ -88,11 +88,12 @@ export const actions: Actions = {
 				: categoryResult.data.name_en
 			: categoryId;
 
-		// Send confirmation email (non-blocking — failure won't break registration)
+		// Send confirmation email — awaited so Cloudflare Worker won't kill the process early.
+		// sendRegistrationEmailSafe internally catches errors, so this never throws.
 		const config = await getTournamentConfig();
 		const resendFrom = env.RESEND_FROM || 'tournament@resend.dev';
 		if (env.RESEND_API_KEY) {
-			sendRegistrationEmail(env.RESEND_API_KEY, resendFrom, {
+			await sendRegistrationEmailSafe(env.RESEND_API_KEY, resendFrom, {
 				to: p1Email,
 				player1Name: `${p1FirstName} ${p1LastName}`,
 				player2Name: `${p2FirstName} ${p2LastName}`,
@@ -106,9 +107,14 @@ export const actions: Actions = {
 				config,
 				locale,
 				siteUrl: url.origin
-			}).catch((err) => {
-				console.error('[email] Failed to send registration email:', err);
 			});
+
+			// Mark email as sent via direct update (service-role bypasses RLS)
+			const { error: markError } = await supabaseAdmin
+				.from('teams')
+				.update({ confirmation_email_sent_at: new Date().toISOString() })
+				.eq('id', data.team_id);
+			if (markError) console.error('[email] Failed to mark email sent:', markError.message);
 		}
 
 		return {
