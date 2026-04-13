@@ -10,7 +10,8 @@
 		Clock,
 		Swords,
 		Scale,
-		Medal
+		Medal,
+		UserPlus
 	} from 'lucide-svelte';
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime.js';
@@ -219,6 +220,13 @@
 				>
 					{m.hero_cta()}
 					<ChevronRight class="h-5 w-5" />
+				</a>
+				<a
+					href="/request-partner"
+					class="inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-cta bg-cta/10 px-10 py-5 font-chinese text-lg font-bold text-cta backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-cta/20 hover:shadow-lg"
+				>
+					<UserPlus class="h-5 w-5" />
+					{m.hero_request_partner()}
 				</a>
 				<a
 					href="#rules"

@@ -412,5 +412,24 @@
   "admin_settings_etransfer_email": "E-Transfer Email",
   "admin_settings_contact_phone": "Contact Phone",
   "admin_settings_contact_wechat": "Contact WeChat",
-  "admin_settings_payment_deadline_hours": "Payment Deadline (hours)"
+  "admin_settings_payment_deadline_hours": "Payment Deadline (hours)",
+
+  "hero_request_partner": "Need a Partner",
+  "rp_page_title": "Request a Partner - Saskatoon Badminton Doubles Championship 2026",
+  "rp_title": "Request a Partner",
+  "rp_subtitle": "Don't have a partner? Fill in your info and we'll help match you",
+  "rp_player_title": "Your Information",
+  "rp_preferred_category": "Preferred Category",
+  "rp_preferred_category_any": "Any",
+  "rp_notes": "Notes",
+  "rp_notes_placeholder": "e.g. Preferred partner gender, skill level, etc.",
+  "rp_submit": "Submit Request",
+  "rp_submitting": "Submitting...",
+  "rp_success_title": "Request Submitted!",
+  "rp_success_subtitle": "Your partner request has been sent to the organizer. We will contact you when we find a match.",
+  "rp_err_missing_fields": "Please fill in all required fields",
+  "rp_err_email_invalid": "Invalid email format",
+  "rp_err_send_failed": "Failed to send request, please try again later",
+  "rp_back_home": "Back to Home",
+  "rp_register_now": "Register Now"
 }

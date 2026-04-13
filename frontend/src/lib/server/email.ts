@@ -109,6 +109,120 @@ export async function sendRegistrationEmailSafe(
 	}
 }
 
+/**
+ * Send a partner request notification email to the organizer.
+ */
+export async function sendPartnerRequestEmail(
+	apiKey: string,
+	fromEmail: string,
+	data: {
+		firstName: string;
+		lastName: string;
+		gender: string;
+		dob: string;
+		age: number;
+		email: string;
+		phone: string;
+		wechat: string;
+		preferredCategory: string;
+		notes: string;
+		config: TournamentConfig;
+		locale: string;
+		siteUrl: string;
+	}
+): Promise<void> {
+	const isZh = data.locale === 'zh';
+	const eventName = isZh ? data.config.event_name.zh : data.config.event_name.en;
+
+	const subject = isZh
+		? `寻找搭档请求 - ${data.firstName} ${data.lastName}`
+		: `Partner Request - ${data.firstName} ${data.lastName}`;
+
+	const genderLabel = isZh
+		? { male: '男', female: '女' }[data.gender] ?? data.gender
+		: { male: 'Male', female: 'Female' }[data.gender] ?? data.gender;
+
+	const t = isZh
+		? {
+				title: '寻找搭档请求',
+				playerLabel: '选手',
+				genderLabel: '性别',
+				ageLabel: '年龄',
+				emailLabel: '邮箱',
+				phoneLabel: '电话',
+				wechatLabel: '微信',
+				categoryLabel: '意向组别',
+				notesLabel: '备注',
+				none: '无',
+				footer: '请登录管理后台处理此请求。'
+			}
+		: {
+				title: 'Partner Request',
+				playerLabel: 'Player',
+				genderLabel: 'Gender',
+				ageLabel: 'Age',
+				emailLabel: 'Email',
+				phoneLabel: 'Phone',
+				wechatLabel: 'WeChat',
+				categoryLabel: 'Preferred Category',
+				notesLabel: 'Notes',
+				none: 'None',
+				footer: 'Please log in to the admin dashboard to handle this request.'
+			};
+
+	const html = `<!DOCTYPE html>
+<html lang="${isZh ? 'zh' : 'en'}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0fdf4;font-family:'Helvetica Neue',Arial,'Noto Sans SC',sans-serif;">
+<div style="max-width:600px;margin:0 auto;padding:24px 16px;">
+
+<div style="background:#064e3b;border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
+  <h1 style="margin:0;color:#fff;font-size:24px;font-weight:700;">${t.title}</h1>
+  <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">${eventName}</p>
+</div>
+
+<div style="background:#fff;padding:32px 24px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;border-top:none;">
+  <table style="width:100%;font-size:14px;color:#475569;" cellpadding="6" cellspacing="0">
+    <tr><td style="color:#94a3b8;width:35%;">${t.playerLabel}</td><td style="font-weight:600;">${data.firstName} ${data.lastName}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.genderLabel}</td><td style="font-weight:600;">${genderLabel}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.ageLabel}</td><td style="font-weight:600;">${data.age}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.emailLabel}</td><td style="font-weight:600;">${data.email}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.phoneLabel}</td><td style="font-weight:600;">${data.phone || t.none}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.wechatLabel}</td><td style="font-weight:600;">${data.wechat || t.none}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.categoryLabel}</td><td style="font-weight:600;">${data.preferredCategory}</td></tr>
+    <tr><td style="color:#94a3b8;">${t.notesLabel}</td><td style="font-weight:600;">${data.notes || t.none}</td></tr>
+  </table>
+
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;">
+    <p style="margin:0;font-size:13px;color:#94a3b8;">${t.footer}</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>`;
+
+	const response = await fetch('https://api.resend.com/emails', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${apiKey}`
+		},
+		body: JSON.stringify({
+			from: fromEmail,
+			to: data.config.etransfer_email,
+			subject,
+			html
+		})
+	});
+
+	if (!response.ok) {
+		const errorBody = await response.text();
+		console.error('[email] Resend API error:', response.status, errorBody);
+		throw new Error(`Resend API error: ${response.status} ${errorBody}`);
+	}
+}
+
 function buildEmailHtml(d: {
 	isZh: boolean;
 	eventName: string;

@@ -412,5 +412,24 @@
   "admin_settings_etransfer_email": "E-Transfer 收款邮箱",
   "admin_settings_contact_phone": "联系电话",
   "admin_settings_contact_wechat": "联系微信",
-  "admin_settings_payment_deadline_hours": "付款截止时间（小时）"
+  "admin_settings_payment_deadline_hours": "付款截止时间（小时）",
+
+  "hero_request_partner": "寻找搭档",
+  "rp_page_title": "寻找搭档 - 萨斯卡通羽毛球双打锦标赛 2026",
+  "rp_title": "寻找搭档",
+  "rp_subtitle": "没有搭档？填写您的信息，组委会帮您匹配合适的搭档",
+  "rp_player_title": "您的信息",
+  "rp_preferred_category": "意向组别",
+  "rp_preferred_category_any": "不限",
+  "rp_notes": "备注",
+  "rp_notes_placeholder": "例如：希望的搭档性别、技术水平等",
+  "rp_submit": "提交请求",
+  "rp_submitting": "提交中...",
+  "rp_success_title": "请求已提交！",
+  "rp_success_subtitle": "您的搭档请求已发送给组委会，找到合适搭档后我们会联系您。",
+  "rp_err_missing_fields": "请填写所有必填项",
+  "rp_err_email_invalid": "邮箱格式不正确",
+  "rp_err_send_failed": "提交失败，请稍后重试",
+  "rp_back_home": "返回首页",
+  "rp_register_now": "立即报名"
 }
