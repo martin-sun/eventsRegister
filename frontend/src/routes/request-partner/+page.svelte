@@ -13,6 +13,7 @@
 		Users
 	} from 'lucide-svelte';
 	import { m } from '$lib/paraglide/messages.js';
+	import DateInput from '$lib/components/DateInput.svelte';
 	import { getLocale } from '$lib/paraglide/runtime.js';
 	import { enhance } from '$app/forms';
 
@@ -150,6 +151,7 @@
 			<form method="POST" action="?/submit" use:enhance={handleEnhance}>
 				<input type="hidden" name="locale" value={getLocale()} />
 				<input type="hidden" name="gender" value={player.gender} />
+				<input type="hidden" name="dob" value={player.dob} />
 
 				<!-- Server Error -->
 				{#if serverError}
@@ -243,18 +245,14 @@
 
 						<!-- DOB -->
 						<div>
-							<label for="dob" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
+							<label class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
 								{m.reg_dob()} <span class="text-danger">{m.reg_required()}</span>
 							</label>
 							<div class="flex items-center gap-3">
-								<input
-									id="dob"
-									name="dob"
-									type="date"
+								<DateInput
 									bind:value={player.dob}
-									onblur={() => (touched.dob = true)}
-									class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none
-									{errors.dob ? 'border-danger ring-2 ring-danger/20' : ''}"
+									hasError={!!errors.dob}
+									onBlur={() => (touched.dob = true)}
 								/>
 								{#if age !== null}
 									<span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary">

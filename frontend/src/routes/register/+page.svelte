@@ -23,6 +23,7 @@
 	import { m } from '$lib/paraglide/messages.js';
 	import { getLocale } from '$lib/paraglide/runtime.js';
 	import { enhance } from '$app/forms';
+	import DateInput from '$lib/components/DateInput.svelte';
 
 	let { data, form } = $props();
 
@@ -452,17 +453,14 @@
 
 					<!-- DOB -->
 					<div>
-						<label for="p1-dob" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
+						<label class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
 							{m.reg_dob()} <span class="text-danger">{m.reg_required()}</span>
 						</label>
 						<div class="flex items-center gap-3">
-							<input
-								id="p1-dob"
-								type="date"
+							<DateInput
 								bind:value={player1.dob}
-								onblur={() => (touched1.dob = true)}
-								class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none
-								{p1Errors.dob ? 'border-danger ring-2 ring-danger/20' : ''}"
+								hasError={!!p1Errors.dob}
+								onBlur={() => (touched1.dob = true)}
 							/>
 							{#if p1Age !== null}
 								<span
@@ -616,17 +614,14 @@
 
 					<!-- DOB -->
 					<div>
-						<label for="p2-dob" class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
+						<label class="mb-1.5 block font-chinese text-sm font-medium text-slate-700">
 							{m.reg_dob()} <span class="text-danger">{m.reg_required()}</span>
 						</label>
 						<div class="flex items-center gap-3">
-							<input
-								id="p2-dob"
-								type="date"
+							<DateInput
 								bind:value={player2.dob}
-								onblur={() => (touched2.dob = true)}
-								class="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none
-								{p2Errors.dob ? 'border-danger ring-2 ring-danger/20' : ''}"
+								hasError={!!p2Errors.dob}
+								onBlur={() => (touched2.dob = true)}
 							/>
 							{#if p2Age !== null}
 								<span
