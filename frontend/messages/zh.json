@@ -429,6 +429,12 @@
   "admin_settings_contact_wechat": "联系微信",
   "admin_settings_payment_deadline_hours": "付款截止时间（小时）",
 
+  "draw_80_label": "双打80岁组对阵",
+  "draw_100_label": "双打100岁组对阵",
+  "draw_80_title": "双打80岁组对阵安排",
+  "draw_100_title": "双打100岁组对阵安排",
+  "back_home": "返回首页",
+
   "hero_request_partner": "寻找搭档",
   "rp_page_title": "寻找搭档 - 萨斯卡通羽毛球双打锦标赛 2026",
   "rp_title": "寻找搭档",

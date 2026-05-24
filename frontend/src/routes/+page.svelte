@@ -57,29 +57,6 @@
 		return eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 	});
 
-	// --- Countdown Timer ---
-
-	let now = $state(new Date());
-	let countdown = $derived(getCountdown(now));
-
-	function getCountdown(current: Date) {
-		const diff = eventDate.getTime() - current.getTime();
-		if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-		return {
-			days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-			hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-			minutes: Math.floor((diff / (1000 * 60)) % 60),
-			seconds: Math.floor((diff / 1000) % 60)
-		};
-	}
-
-	$effect(() => {
-		const timer = setInterval(() => {
-			now = new Date();
-		}, 1000);
-		return () => clearInterval(timer);
-	});
-
 	// --- Category descriptions keyed by slug ---
 	const categoryDescriptions: Record<string, () => string> = {
 		'doubles-100': () => m.category_100_desc(),
@@ -195,38 +172,21 @@
 				</span>
 			</div>
 
-			<!-- Countdown -->
-			<div class="mb-12 flex items-center justify-center gap-3 sm:gap-6">
-				{#each [
-					{ value: countdown.days, label: m.countdown_days() },
-					{ value: countdown.hours, label: m.countdown_hours() },
-					{ value: countdown.minutes, label: m.countdown_minutes() },
-					{ value: countdown.seconds, label: m.countdown_seconds() }
-				] as unit}
-					<div class="flex flex-col items-center group">
-						<div class="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/20 bg-white/10 font-heading text-4xl shadow-2xl backdrop-blur-md transition-all duration-300 group-hover:-translate-y-1 group-hover:bg-white/20 sm:h-24 sm:w-24 sm:text-5xl">
-							{String(unit.value).padStart(2, '0')}
-						</div>
-						<span class="mt-3 font-chinese text-sm font-medium tracking-widest text-white/80 uppercase">{unit.label}</span>
-					</div>
-				{/each}
-			</div>
-
 			<!-- CTA Buttons -->
 			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
 				<a
-					href="/register"
+					href="/draw-80"
 					class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cta px-10 py-5 font-chinese text-lg font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:bg-cta-hover hover:shadow-2xl"
 				>
-					{m.hero_cta()}
+					{m.draw_80_label()}
 					<ChevronRight class="h-5 w-5" />
 				</a>
 				<a
-					href="/request-partner"
-					class="inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-cta bg-cta/10 px-10 py-5 font-chinese text-lg font-bold text-cta backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-cta/20 hover:shadow-lg"
+					href="/draw-100"
+					class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-cta px-10 py-5 font-chinese text-lg font-bold text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:bg-cta-hover hover:shadow-2xl"
 				>
-					<UserPlus class="h-5 w-5" />
-					{m.hero_request_partner()}
+					{m.draw_100_label()}
+					<ChevronRight class="h-5 w-5" />
 				</a>
 				<a
 					href="#rules"
